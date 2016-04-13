@@ -1,0 +1,30 @@
+= SMART COSMOS Security: Authorization Server
+SMARTRAC Technology Fletcher Inc <api@smartrac-group.com>
+
+The Authorization Server (Auth-Server) is designed to fit a flexible architecture that might want to use an entirely different form of authentication.
+
+By design, there are several components:
+ * The Authorization Server (this component)
+ * The Client Details Service
+ * The Service User Details Service
+ * The User Management Server
+ * The Credential Management Server
+
+Simple way to test logging in and getting an access token:
+
+----
+curl localhost:9999/uaa/oauth/token \
+  -d "grant_type=password" \
+  -d "scope=read" \
+  -d "username=user" \
+  -d "password=password" \
+  -u $SC_CLIENT_ID:$SC_CLIENT_PASSWORD | jq
+----
+
+Another way to get the access token (this is for services that are oblivious of account specific actions):
+
+----
+curl -s $SC_CLIENT_ID:$SC_CLIENT_PASSWORD@localhost:9999/uaa/oauth/token  \
+ -d grant_type=client_credentials \
+ -d scope=read | jq .
+----
