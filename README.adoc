@@ -9,6 +9,7 @@ image::https://travis-ci.org/{USER}/{REPO}.svg?branch={BRANCH}[Build Status, lin
 The Authorization Server (Auth-Server) is designed to fit a flexible architecture that might want to use an entirely different form of authentication.
 
 By design, there are several components:
+
  * The Authorization Server (this component)
  * The Client Details Service
  * The Service User Details Service
