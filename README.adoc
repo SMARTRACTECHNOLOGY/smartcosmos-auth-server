@@ -1,5 +1,10 @@
 = SMART COSMOS Security: Authorization Server
 SMARTRAC Technology Fletcher Inc <api@smartrac-group.com>
+ifdef::env-github[:USER: SMARTRACTECHNOLOGY]
+ifdef::env-github[:REPO: smartcosmos-auth-server]
+ifdef::env-github[:BRANCH: master]
+
+image::https://travis-ci.org/{USER}/{REPO}.svg?branch={BRANCH}[Build Status, link=https://travis-ci.org/{USER}/{REPO}]
 
 The Authorization Server (Auth-Server) is designed to fit a flexible architecture that might want to use an entirely different form of authentication.
 
