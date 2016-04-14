@@ -21,13 +21,13 @@ import lombok.ToString;
 @ToString(exclude = "passwordHash")
 public class UserDto {
 
-	private String accountUrn;
+    private String accountUrn;
 
-	private String userUrn;
+    private String userUrn;
 
-	private String username;
+    private String username;
 
-	private String passwordHash;
+    private String passwordHash;
 
-	private List<String> roles;
+    private List<String> roles;
 }

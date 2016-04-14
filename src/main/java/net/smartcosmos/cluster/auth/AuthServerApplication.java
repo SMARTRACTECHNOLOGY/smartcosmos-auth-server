@@ -55,159 +55,159 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 @EnableDiscoveryClient
 public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
-	public static void main(String[] args) {
-		new SpringApplicationBuilder(AuthServerApplication.class).web(true).run(args);
-	}
+    public static void main(String[] args) {
+        new SpringApplicationBuilder(AuthServerApplication.class).web(true).run(args);
+    }
 
-	@Bean
-	@Primary
-	public AuthenticationManager authenticationManager(
-			AuthenticationConfiguration configuration) throws Exception {
-		return configuration.getAuthenticationManager();
-	}
+    @Bean
+    @Primary
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
 
-	@Override
-	public void addViewControllers(ViewControllerRegistry registry) {
-		registry.addViewController("/login").setViewName("login");
-		registry.addViewController("/oauth/confirm_access").setViewName("authorize");
-	}
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/login").setViewName("login");
+        registry.addViewController("/oauth/confirm_access").setViewName("authorize");
+    }
 
-	@Configuration
-	@EnableGlobalAuthentication
-	@Order(SecurityProperties.ACCESS_OVERRIDE_ORDER - 3)
-	protected static class GlobalAuthenticationConfig
-			extends GlobalAuthenticationConfigurerAdapter {
+    @Configuration
+    @EnableGlobalAuthentication
+    @Order(SecurityProperties.ACCESS_OVERRIDE_ORDER - 3)
+    protected static class GlobalAuthenticationConfig
+            extends GlobalAuthenticationConfigurerAdapter {
 
-		@Autowired
-		private SmartCosmosAuthenticationProvider smartCosmosAuthenticationProvider;
+        @Autowired
+        private SmartCosmosAuthenticationProvider smartCosmosAuthenticationProvider;
 
-		@Bean
-		PasswordEncoder passwordEncoder() {
-			return new BCryptPasswordEncoder();
-		}
+        @Bean
+        PasswordEncoder passwordEncoder() {
+            return new BCryptPasswordEncoder();
+        }
 
-		@Override
-		public void configure(AuthenticationManagerBuilder auth) throws Exception {
-			log.info("Adding in customer user details authentication provider");
-			auth.authenticationProvider(smartCosmosAuthenticationProvider);
-		}
-	}
+        @Override
+        public void configure(AuthenticationManagerBuilder auth) throws Exception {
+            log.info("Adding in customer user details authentication provider");
+            auth.authenticationProvider(smartCosmosAuthenticationProvider);
+        }
+    }
 
-	@EnableWebSecurity
-	@Configuration
-	@EnableSmartCosmosSecurity
-	@Order(SecurityProperties.ACCESS_OVERRIDE_ORDER)
-	protected static class LoginConfig extends WebSecurityConfigurerAdapter {
+    @EnableWebSecurity
+    @Configuration
+    @EnableSmartCosmosSecurity
+    @Order(SecurityProperties.ACCESS_OVERRIDE_ORDER)
+    protected static class LoginConfig extends WebSecurityConfigurerAdapter {
 
-		@Autowired
-		AuthenticationSuccessHandler authenticationSuccessHandler;
+        @Autowired
+        AuthenticationSuccessHandler authenticationSuccessHandler;
 
-		@Autowired
-		AuthenticationFailureHandler authenticationFailureHandler;
+        @Autowired
+        AuthenticationFailureHandler authenticationFailureHandler;
 
-		@Autowired
-		LogoutSuccessHandler logoutSuccessHandler;
+        @Autowired
+        LogoutSuccessHandler logoutSuccessHandler;
 
-		@Autowired
-		private AuthenticationManager authenticationManager;
+        @Autowired
+        private AuthenticationManager authenticationManager;
 
-		@Override
-		protected void configure(HttpSecurity http) throws Exception {
-			http.csrf().and().exceptionHandling()
-					.accessDeniedHandler(new DirectAccessDeniedHandler())
-					.authenticationEntryPoint(new DirectUnauthorizedEntryPoint()).and()
-					.httpBasic();
-			// .formLogin()
-			// .loginProcessingUrl("/authentication")
-			// .successHandler(authenticationSuccessHandler)
-			// .failureHandler(authenticationFailureHandler)
-			// .usernameParameter("username")
-			// .passwordParameter("password")
-			// .permitAll()
-			// .and()
-			// .logout()
-			// .logoutUrl("/logout")
-			// .logoutSuccessHandler(logoutSuccessHandler)
-			// .deleteCookies("JSESSIONID", "CSRF-TOKEN")
-			// .permitAll()
-			// .and()
-			// .headers()
-			// .frameOptions()
-			// .disable()
-			// .and()
-			// .authorizeRequests()
-			// .antMatchers("/oauth/**").permitAll()
-			// .anyRequest().authenticated();
-		}
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http.csrf().and().exceptionHandling()
+                    .accessDeniedHandler(new DirectAccessDeniedHandler())
+                    .authenticationEntryPoint(new DirectUnauthorizedEntryPoint()).and()
+                    .httpBasic();
+            // .formLogin()
+            // .loginProcessingUrl("/authentication")
+            // .successHandler(authenticationSuccessHandler)
+            // .failureHandler(authenticationFailureHandler)
+            // .usernameParameter("username")
+            // .passwordParameter("password")
+            // .permitAll()
+            // .and()
+            // .logout()
+            // .logoutUrl("/logout")
+            // .logoutSuccessHandler(logoutSuccessHandler)
+            // .deleteCookies("JSESSIONID", "CSRF-TOKEN")
+            // .permitAll()
+            // .and()
+            // .headers()
+            // .frameOptions()
+            // .disable()
+            // .and()
+            // .authorizeRequests()
+            // .antMatchers("/oauth/**").permitAll()
+            // .anyRequest().authenticated();
+        }
 
-		@Override
-		protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-			auth.parentAuthenticationManager(authenticationManager);
-		}
-	}
+        @Override
+        protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+            auth.parentAuthenticationManager(authenticationManager);
+        }
+    }
 
-	@Configuration
-	@EnableAuthorizationServer
-	@EnableConfigurationProperties({ SecurityResourceProperties.class })
-	@Order(SecurityProperties.ACCESS_OVERRIDE_ORDER)
-	protected static class OAuth2Config extends AuthorizationServerConfigurerAdapter {
+    @Configuration
+    @EnableAuthorizationServer
+    @EnableConfigurationProperties({ SecurityResourceProperties.class })
+    @Order(SecurityProperties.ACCESS_OVERRIDE_ORDER)
+    protected static class OAuth2Config extends AuthorizationServerConfigurerAdapter {
 
-		@Autowired
-		private SecurityResourceProperties securityResourceProperties;
+        @Autowired
+        private SecurityResourceProperties securityResourceProperties;
 
-		@Autowired
-		private AuthenticationManager authenticationManager;
+        @Autowired
+        private AuthenticationManager authenticationManager;
 
-		@Autowired
-		private SmartCosmosUserAuthenticationConverter smartCosmosUserAuthenticationConverter;
+        @Autowired
+        private SmartCosmosUserAuthenticationConverter smartCosmosUserAuthenticationConverter;
 
-		@Autowired
-		private SmartCosmosAuthenticationProvider smartCosmosAuthenticationProvider;
+        @Autowired
+        private SmartCosmosAuthenticationProvider smartCosmosAuthenticationProvider;
 
-		@Bean
-		public JwtAccessTokenConverter jwtAccessTokenConverter() {
-			JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
-			smartCosmosUserAuthenticationConverter
-					.setUserDetailsService(smartCosmosAuthenticationProvider);
-			((DefaultAccessTokenConverter) converter.getAccessTokenConverter())
-					.setUserTokenConverter(smartCosmosUserAuthenticationConverter);
-			log.info("JWT Access Token Location {}, keypair name {}",
-					securityResourceProperties.getKeystore().getLocation(),
-					securityResourceProperties.getKeystore().getKeypair());
-			KeyPair keyPair = new KeyStoreKeyFactory(
-					securityResourceProperties.getKeystore().getLocation(),
-					securityResourceProperties.getKeystore().getPassword()).getKeyPair(
-							securityResourceProperties.getKeystore().getKeypair(),
-							securityResourceProperties.getKeystore()
-									.getKeypairPassword());
-			converter.setKeyPair(keyPair);
-			return converter;
-		}
+        @Bean
+        public JwtAccessTokenConverter jwtAccessTokenConverter() {
+            JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
+            smartCosmosUserAuthenticationConverter
+                    .setUserDetailsService(smartCosmosAuthenticationProvider);
+            ((DefaultAccessTokenConverter) converter.getAccessTokenConverter())
+                    .setUserTokenConverter(smartCosmosUserAuthenticationConverter);
+            log.info("JWT Access Token Location {}, keypair name {}",
+                    securityResourceProperties.getKeystore().getLocation(),
+                    securityResourceProperties.getKeystore().getKeypair());
+            KeyPair keyPair = new KeyStoreKeyFactory(
+                    securityResourceProperties.getKeystore().getLocation(),
+                    securityResourceProperties.getKeystore().getPassword()).getKeyPair(
+                            securityResourceProperties.getKeystore().getKeypair(),
+                            securityResourceProperties.getKeystore()
+                                    .getKeypairPassword());
+            converter.setKeyPair(keyPair);
+            return converter;
+        }
 
-		@Override
-		public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-			clients.inMemory()
-					// TODO This is just here for development purposes.
-					.withClient(securityResourceProperties.getClientId())
-					.secret(securityResourceProperties.getClientSecret())
-					.authorizedGrantTypes("authorization_code", "refresh_token",
-							"implicit", "password", "client_credentials")
-					.scopes("read", "write");
-		}
+        @Override
+        public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+            clients.inMemory()
+                    // TODO This is just here for development purposes.
+                    .withClient(securityResourceProperties.getClientId())
+                    .secret(securityResourceProperties.getClientSecret())
+                    .authorizedGrantTypes("authorization_code", "refresh_token",
+                            "implicit", "password", "client_credentials")
+                    .scopes("read", "write");
+        }
 
-		@Override
-		public void configure(AuthorizationServerEndpointsConfigurer endpoints)
-				throws Exception {
-			endpoints.authenticationManager(authenticationManager)
-					.accessTokenConverter(jwtAccessTokenConverter());
-		}
+        @Override
+        public void configure(AuthorizationServerEndpointsConfigurer endpoints)
+                throws Exception {
+            endpoints.authenticationManager(authenticationManager)
+                    .accessTokenConverter(jwtAccessTokenConverter());
+        }
 
-		@Override
-		public void configure(AuthorizationServerSecurityConfigurer oauthServer)
-				throws Exception {
-			oauthServer.tokenKeyAccess("permitAll()")
-					.checkTokenAccess("isAuthenticated()");
-		}
+        @Override
+        public void configure(AuthorizationServerSecurityConfigurer oauthServer)
+                throws Exception {
+            oauthServer.tokenKeyAccess("permitAll()")
+                    .checkTokenAccess("isAuthenticated()");
+        }
 
-	}
+    }
 }
