@@ -1,14 +1,11 @@
 package net.smartcosmos.cluster.auth;
 
-import java.security.KeyPair;
-
 import lombok.extern.slf4j.Slf4j;
 import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.authentication.direct.DirectAccessDeniedHandler;
 import net.smartcosmos.security.authentication.direct.DirectUnauthorizedEntryPoint;
+import net.smartcosmos.security.authentication.direct.EnableDirectHandlers;
 import net.smartcosmos.security.user.SmartCosmosUserAuthenticationConverter;
-import net.smartcosmos.spring.EnableSmartCosmosSecurity;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
@@ -20,6 +17,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.authentication.configuration.EnableGlobalAuthentication;
@@ -41,9 +39,12 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+import java.security.KeyPair;
 
 /**
  * @author voor
@@ -68,6 +69,7 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("").setViewName("home");
         registry.addViewController("/login").setViewName("login");
         registry.addViewController("/oauth/confirm_access").setViewName("authorize");
     }
@@ -79,7 +81,7 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
             extends GlobalAuthenticationConfigurerAdapter {
 
         @Autowired
-        private SmartCosmosAuthenticationProvider smartCosmosAuthenticationProvider;
+        private AuthenticationProvider smartCosmosAuthenticationProvider;
 
         @Bean
         PasswordEncoder passwordEncoder() {
@@ -95,7 +97,7 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
     @EnableWebSecurity
     @Configuration
-    @EnableSmartCosmosSecurity
+    @EnableDirectHandlers
     @Order(SecurityProperties.ACCESS_OVERRIDE_ORDER)
     protected static class LoginConfig extends WebSecurityConfigurerAdapter {
 
@@ -113,31 +115,32 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
         @Override
         protected void configure(HttpSecurity http) throws Exception {
+
+            final String loginPage = "/login";
             http.csrf().and().exceptionHandling()
                     .accessDeniedHandler(new DirectAccessDeniedHandler())
-                    .authenticationEntryPoint(new DirectUnauthorizedEntryPoint()).and()
-                    .httpBasic();
-            // .formLogin()
-            // .loginProcessingUrl("/authentication")
-            // .successHandler(authenticationSuccessHandler)
-            // .failureHandler(authenticationFailureHandler)
-            // .usernameParameter("username")
-            // .passwordParameter("password")
-            // .permitAll()
-            // .and()
-            // .logout()
-            // .logoutUrl("/logout")
-            // .logoutSuccessHandler(logoutSuccessHandler)
-            // .deleteCookies("JSESSIONID", "CSRF-TOKEN")
-            // .permitAll()
-            // .and()
-            // .headers()
-            // .frameOptions()
-            // .disable()
-            // .and()
-            // .authorizeRequests()
-            // .antMatchers("/oauth/**").permitAll()
-            // .anyRequest().authenticated();
+                    .authenticationEntryPoint(new DirectUnauthorizedEntryPoint(loginPage)).and()
+             .formLogin()
+                .loginPage(loginPage).permitAll()
+             .successHandler(authenticationSuccessHandler)
+             .failureHandler(authenticationFailureHandler)
+             .usernameParameter("username")
+             .passwordParameter("password")
+             .permitAll()
+             .and()
+             .logout()
+             .logoutUrl("/logout")
+             .logoutSuccessHandler(logoutSuccessHandler)
+             .deleteCookies("JSESSIONID", "CSRF-TOKEN")
+             .permitAll()
+             .and()
+             .headers()
+             .frameOptions()
+             .disable()
+             .and()
+             .authorizeRequests()
+//             .antMatchers("/oauth/**").permitAll()
+             .anyRequest().authenticated();
         }
 
         @Override
@@ -159,21 +162,21 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
         private AuthenticationManager authenticationManager;
 
         @Autowired
-        private SmartCosmosUserAuthenticationConverter smartCosmosUserAuthenticationConverter;
-
-        @Autowired
         private SmartCosmosAuthenticationProvider smartCosmosAuthenticationProvider;
 
         @Bean
         public JwtAccessTokenConverter jwtAccessTokenConverter() {
+
+            Assert.hasText(securityResourceProperties.getKeystore().getKeypair());
+            Assert.notNull(securityResourceProperties.getKeystore().getLocation());
+
             JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
+            SmartCosmosUserAuthenticationConverter smartCosmosUserAuthenticationConverter = new SmartCosmosUserAuthenticationConverter();
+
             smartCosmosUserAuthenticationConverter
                     .setUserDetailsService(smartCosmosAuthenticationProvider);
             ((DefaultAccessTokenConverter) converter.getAccessTokenConverter())
                     .setUserTokenConverter(smartCosmosUserAuthenticationConverter);
-            log.info("JWT Access Token Location {}, keypair name {}",
-                    securityResourceProperties.getKeystore().getLocation(),
-                    securityResourceProperties.getKeystore().getKeypair());
             KeyPair keyPair = new KeyStoreKeyFactory(
                     securityResourceProperties.getKeystore().getLocation(),
                     securityResourceProperties.getKeystore().getPassword()).getKeyPair(

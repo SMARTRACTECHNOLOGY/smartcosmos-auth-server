@@ -11,13 +11,14 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
 import lombok.extern.slf4j.Slf4j;
-import net.smartcosmos.cluster.auth.domain.UserDto;
+import net.smartcosmos.cluster.auth.domain.UserResponse;
 import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.user.SmartCosmosCachedUser;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.netflix.ribbon.RibbonClientHttpRequestFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpRequest;
@@ -47,6 +48,7 @@ import org.springframework.web.client.RestTemplate;
  */
 @Slf4j
 @Service
+@Profile("!test")
 @EnableConfigurationProperties({ SecurityResourceProperties.class })
 public class SmartCosmosAuthenticationProvider
         extends AbstractUserDetailsAuthenticationProvider implements UserDetailsService {
@@ -116,6 +118,31 @@ public class SmartCosmosAuthenticationProvider
         }
     }
 
+    protected UserResponse fetchUser(String username,
+                                     UsernamePasswordAuthenticationToken authentication) throws InternalAuthenticationServiceException {
+        try {
+            return this.restTemplate
+                .exchange(userDetailsServerLocationUri + "/{username}",
+                    HttpMethod.POST, new HttpEntity<Object>(authentication),
+                    UserResponse.class, username)
+                .getBody();
+        }
+        catch (HttpClientErrorException e) {
+            if (HttpStatus.UNAUTHORIZED.equals(e.getStatusCode())) {
+                log.debug(
+                    "User Details Service not properly configured to use SMART COSMOS Security Credentials; all requests will fail.");
+                throw new InternalAuthenticationServiceException(e.getMessage(), e);
+            }
+            else {
+                throw new InternalAuthenticationServiceException(e.getMessage(), e);
+            }
+        }
+        catch (Exception e) {
+            log.debug("InternalAuthenticationServiceException", e);
+            throw new InternalAuthenticationServiceException(e.getMessage(), e);
+        }
+    }
+
     @Override
     protected UserDetails retrieveUser(String username,
             UsernamePasswordAuthenticationToken authentication)
@@ -142,37 +169,17 @@ public class SmartCosmosAuthenticationProvider
             }
         }
 
-        UserDto userDto = null;
-        try {
-            userDto = this.restTemplate
-                    .exchange(userDetailsServerLocationUri + "/{username}",
-                            HttpMethod.POST, new HttpEntity<Object>(authentication),
-                            UserDto.class, username)
-                    .getBody();
-        }
-        catch (HttpClientErrorException e) {
-            if (HttpStatus.UNAUTHORIZED.equals(e.getStatusCode())) {
-                log.debug(
-                        "User Details Service not properly configured to use SMART COSMOS Security Credentials; all requests will fail.");
-                throw new InternalAuthenticationServiceException(e.getMessage(), e);
-            }
-            else {
-                throw new InternalAuthenticationServiceException(e.getMessage(), e);
-            }
-        }
-        catch (Exception e) {
-            log.debug("InternalAuthenticationServiceException", e);
-            throw new InternalAuthenticationServiceException(e.getMessage(), e);
-        }
+        UserResponse userResponse = fetchUser(username,authentication);
 
-        log.info("Received response of: {}", userDto);
+
+        log.info("Received response of: {}", userResponse);
 
         final SmartCosmosCachedUser user = new SmartCosmosCachedUser(
-                userDto.getAccountUrn(), userDto.getUserUrn(), userDto.getUsername(),
-                userDto.getPasswordHash(), userDto.getRoles().stream()
+                userResponse.getAccountUrn(), userResponse.getUserUrn(), userResponse.getUsername(),
+                userResponse.getPasswordHash(), userResponse.getRoles().stream()
                         .map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
 
-        users.put(userDto.getUsername(), user);
+        users.put(userResponse.getUsername(), user);
 
         return user;
     }

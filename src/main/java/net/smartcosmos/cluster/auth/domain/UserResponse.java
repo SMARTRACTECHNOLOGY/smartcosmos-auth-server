@@ -1,11 +1,11 @@
 package net.smartcosmos.cluster.auth.domain;
 
-import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+
+import java.util.List;
 
 /**
  * This is the response from the User Details Service that will contain the necessary
@@ -19,7 +19,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString(exclude = "passwordHash")
-public class UserDto {
+public class UserResponse {
 
     private String accountUrn;
 

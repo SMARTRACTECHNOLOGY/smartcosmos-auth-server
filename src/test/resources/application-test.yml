@@ -1,0 +1,24 @@
+info:
+  component: Auth Server
+
+smartcosmos:
+  debug: false
+  security:
+    resource:
+      keystore:
+        location: "classpath:test-smartcosmos.jks"
+        password: password
+        keypair: smartcosmostest
+        keypairPassword: password
+      user-details:
+        server:
+          location-uri: http://localhost:9999
+
+server:
+  contextPath: /uaa
+
+logging:
+  level:
+    ROOT: INFO
+    net.smartcosmos.cluster: TRACE
+    org.springframework.security: TRACE
