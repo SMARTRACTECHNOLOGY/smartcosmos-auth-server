@@ -5,7 +5,7 @@ install:
 script:
 - mvn -s .settings.xml $MVN_GOAL -nsu -Dmaven.test.redirectTestOutputToFile=true
 after_success:
-- mvn -s .settings.xml clean test jacoco:report coveralls:report -DrepoToken=$COVERALLS_REPO_TOKEN
+- mvn -s .settings.xml -P coverage clean test jacoco:report coveralls:report -DrepoToken=$COVERALLS_REPO_TOKEN
 jdk:
 - oraclejdk8
 env:

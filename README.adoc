@@ -20,7 +20,7 @@ By design, there are several components:
 Simple way to test logging in and getting an access token:
 
 ----
-curl localhost:9999/uaa/oauth/token \
+curl localhost:9999/oauth/token \
   -d "grant_type=password" \
   -d "scope=read" \
   -d "username=user" \
@@ -31,7 +31,7 @@ curl localhost:9999/uaa/oauth/token \
 Another way to get the access token (this is for services that are oblivious of account specific actions):
 
 ----
-curl -s $SC_CLIENT_ID:$SC_CLIENT_PASSWORD@localhost:9999/uaa/oauth/token  \
+curl -s $SC_CLIENT_ID:$SC_CLIENT_PASSWORD@localhost:9999/oauth/token  \
  -d grant_type=client_credentials \
  -d scope=read | jq .
 ----
