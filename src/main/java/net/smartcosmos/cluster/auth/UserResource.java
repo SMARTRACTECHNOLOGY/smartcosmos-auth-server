@@ -15,8 +15,11 @@ public class UserResource {
 
     @RequestMapping({ "/user", "/me" })
     public Map<String, String> user(Principal principal) {
+
         Map<String, String> map = new LinkedHashMap<>();
-        map.put("name", principal.getName());
+        if (principal != null) {
+            map.put("name", principal.getName());
+        }
         return map;
     }
 }

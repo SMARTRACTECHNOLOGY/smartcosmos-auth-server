@@ -3,7 +3,6 @@ info:
 
 server:
   port: 0
-  contextPath: /uaa
 
 spring:
   cloud:

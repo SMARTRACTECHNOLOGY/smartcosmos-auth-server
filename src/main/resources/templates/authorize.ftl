@@ -1,11 +1,6 @@
-<html>
-<head>
-<link rel="stylesheet" href="../css/wro.css"/>
-</head>
-<body>
+
 	<div class="container">
 		<h2>Please Confirm</h2>
-
 		<p>
 			Do you authorize "${authorizationRequest.clientId}" at "${authorizationRequest.redirectUri}" to access your protected resources
 			with scope ${authorizationRequest.scope?join(", ")}.
@@ -23,6 +18,3 @@
 			<button class="btn btn-primary" type="submit">Deny</button>
 		</form>
 	</div>
-	<script src="../js/wro.js"	type="text/javascript"></script>
-</body>
-</html>

@@ -1,9 +1,10 @@
 package net.smartcosmos.cluster.auth;
 
 import lombok.extern.slf4j.Slf4j;
+import net.smartcosmos.cluster.auth.filter.CsrfHeaderFilter;
+import net.smartcosmos.cluster.auth.handlers.AuthUnauthorizedEntryPoint;
 import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.authentication.direct.DirectAccessDeniedHandler;
-import net.smartcosmos.security.authentication.direct.DirectUnauthorizedEntryPoint;
 import net.smartcosmos.security.authentication.direct.EnableDirectHandlers;
 import net.smartcosmos.security.user.SmartCosmosUserAuthenticationConverter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,12 +39,16 @@ import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFacto
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
+import javax.servlet.Filter;
 import java.security.KeyPair;
 
 /**
@@ -69,7 +74,6 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("").setViewName("home");
         registry.addViewController("/login").setViewName("login");
         registry.addViewController("/oauth/confirm_access").setViewName("authorize");
     }
@@ -117,35 +121,56 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
         protected void configure(HttpSecurity http) throws Exception {
 
             final String loginPage = "/login";
-            http.csrf().and().exceptionHandling()
+            final String logoutPage = "/logout";
+            // @formatter:off
+            http
+                .csrf()
+                    .csrfTokenRepository(csrfTokenRepository())
+                    .and()
+                    .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
+                .exceptionHandling()
                     .accessDeniedHandler(new DirectAccessDeniedHandler())
-                    .authenticationEntryPoint(new DirectUnauthorizedEntryPoint(loginPage)).and()
-             .formLogin()
-                .loginPage(loginPage).permitAll()
-             .successHandler(authenticationSuccessHandler)
-             .failureHandler(authenticationFailureHandler)
-             .usernameParameter("username")
-             .passwordParameter("password")
-             .permitAll()
-             .and()
-             .logout()
-             .logoutUrl("/logout")
-             .logoutSuccessHandler(logoutSuccessHandler)
-             .deleteCookies("JSESSIONID", "CSRF-TOKEN")
-             .permitAll()
-             .and()
-             .headers()
-             .frameOptions()
-             .disable()
-             .and()
-             .authorizeRequests()
-//             .antMatchers("/oauth/**").permitAll()
-             .anyRequest().authenticated();
+                    .authenticationEntryPoint(new AuthUnauthorizedEntryPoint(loginPage))
+                .and()
+                .formLogin()
+                    .loginPage(loginPage)
+                    .permitAll()
+                    .successHandler(authenticationSuccessHandler)
+                    .failureHandler(authenticationFailureHandler)
+                    .usernameParameter("username").passwordParameter("password")
+                    .permitAll()
+                .and()
+                .logout()
+                    .logoutUrl(logoutPage)
+                    .deleteCookies("JSESSIONID", "CSRF-TOKEN")
+                    .permitAll()
+                .and()
+                .headers()
+                    .frameOptions()
+                    .disable()
+                .and()
+                    .antMatcher("/**")
+                        .authorizeRequests()
+                    .antMatchers(loginPage + "**")
+                        .permitAll()
+                    .anyRequest()
+                        .authenticated();
+            // @formatter:on
         }
 
         @Override
         protected void configure(AuthenticationManagerBuilder auth) throws Exception {
             auth.parentAuthenticationManager(authenticationManager);
+        }
+
+        private CsrfTokenRepository csrfTokenRepository() {
+            HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
+            repository.setHeaderName("X-XSRF-TOKEN");
+            return repository;
+        }
+
+        private Filter csrfHeaderFilter() {
+            return new CsrfHeaderFilter();
         }
     }
 
