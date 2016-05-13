@@ -65,11 +65,14 @@ public class AuthServerApplicationTest {
         form.set("_csrf", csrf);
         HttpHeaders headers = new HttpHeaders();
         headers.put("COOKIE", response.getHeaders().get("Set-Cookie"));
+
         RequestEntity<MultiValueMap<String, String>> request = new RequestEntity<MultiValueMap<String, String>>(
             form, headers, HttpMethod.POST, URI.create("http://localhost:" + port
             + "/login"));
         ResponseEntity<Void> location = template.exchange(request, Void.class);
-        assertEquals(HttpStatus.OK, location.getStatusCode());
+        assertEquals(HttpStatus.FOUND, location.getStatusCode());
+        assertEquals("http://localhost:" + port + "/",
+            location.getHeaders().getFirst("Location"));
     }
 
     private String getCsrf(String soup) {
