@@ -13,6 +13,8 @@ eureka:
   client:
     enabled:  false
 
+ribbon.http.client.enabled: true
+
 smartcosmos:
   debug: false
   security:
