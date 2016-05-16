@@ -135,8 +135,6 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
                 .formLogin()
                     .loginPage(loginPage)
                     .permitAll()
-                    .successHandler(authenticationSuccessHandler)
-                    .failureHandler(authenticationFailureHandler)
                     .usernameParameter("username").passwordParameter("password")
                     .permitAll()
                 .and()

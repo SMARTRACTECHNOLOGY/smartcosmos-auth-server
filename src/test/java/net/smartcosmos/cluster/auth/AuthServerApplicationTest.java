@@ -66,7 +66,7 @@ public class AuthServerApplicationTest {
         HttpHeaders headers = new HttpHeaders();
         headers.put("COOKIE", response.getHeaders().get("Set-Cookie"));
 
-        RequestEntity<MultiValueMap<String, String>> request = new RequestEntity<MultiValueMap<String, String>>(
+        RequestEntity<MultiValueMap<String, String>> request = new RequestEntity<>(
             form, headers, HttpMethod.POST, URI.create("http://localhost:" + port
             + "/login"));
         ResponseEntity<Void> location = template.exchange(request, Void.class);
