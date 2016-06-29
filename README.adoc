@@ -28,10 +28,29 @@ curl localhost:9999/oauth/token \
   -u $SC_CLIENT_ID:$SC_CLIENT_PASSWORD | jq
 ----
 
-Another way to get the access token (this is for services that are oblivious of account specific actions):
+You should get a response in this format:
 
 ----
-curl -s $SC_CLIENT_ID:$SC_CLIENT_PASSWORD@localhost:9999/oauth/token  \
- -d grant_type=client_credentials \
- -d scope=read | jq .
+{
+  "access_token": "eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyX25hbWUiOiJ1c2VyIiwic2NvcGUiOlsicmVhZCJdLCJhY2NvdW50X3VybiI6InVybjphY2NvdW50OnV1aWQ6NTNmNDUyYzItNWEwMS00NGZkLTk5NTYtM2VjZmY3YzMyYjMwIiwiZXhwIjoxNDY3MjYwMzI1LCJhdXRob3JpdGllcyI6WyJST0xFX1VTRVIiXSwidXNlcl91cm4iOiJ1cm46dXNlcjp1dWlkOjUzZjQ1MmMyLTVhMDEtNDRmZC05OTU2LTNlY2ZmN2MzMmIzMCIsImp0aSI6IjJmZmRmNGFmLWIyYjgtNGVmMC04M2QwLTRlMzlkOTFlMDdhNSIsImNsaWVudF9pZCI6InNtYXJ0Y29zbW9zc2VydmljZSJ9.F2HE_fYBjwkM3keolbWw_QsAJX60bVbmoEB7mPd1EM6quk-aPQCadv1HPKPbRLb6NRsCfnMNWpqYJMi9GmL-lm597QkmjPbvza9lLdZ2CNwg4EE4VkMwIYZowGbNzn705wXvgJuVga4oCpJ_vmFXbQpTIeObC1Tc2RHRoNdRGWBnawz_KNNuz1EHDdrhH7cmGU3v1YyU6gfrLduk1N4SwpwbrsHp3ziDAtdXlBiUjZ_-wEg9OXWMJE54UsQf1E4UOOltOKfvvfGZMxtmcZU33FPxiK9jBcNhCgN85ak5Tis8A-vwR21VssBq01h6_0wm9rTJEs2LxtI7kMsli5MnNw",
+  "token_type": "bearer",
+  "refresh_token": "eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyX25hbWUiOiJ1c2VyIiwic2NvcGUiOlsicmVhZCJdLCJhdGkiOiIyZmZkZjRhZi1iMmI4LTRlZjAtODNkMC00ZTM5ZDkxZTA3YTUiLCJhY2NvdW50X3VybiI6InVybjphY2NvdW50OnV1aWQ6NTNmNDUyYzItNWEwMS00NGZkLTk5NTYtM2VjZmY3YzMyYjMwIiwiZXhwIjoxNDY5ODA5MTI1LCJhdXRob3JpdGllcyI6WyJST0xFX1VTRVIiXSwidXNlcl91cm4iOiJ1cm46dXNlcjp1dWlkOjUzZjQ1MmMyLTVhMDEtNDRmZC05OTU2LTNlY2ZmN2MzMmIzMCIsImp0aSI6Ijc5YjFlMjUxLTU5ZTgtNGIxMC1hZjFjLWNjZWNjYzhkYmE3YyIsImNsaWVudF9pZCI6InNtYXJ0Y29zbW9zc2VydmljZSJ9.MS5IJGXBB9xroYaPGoNGHpMnKC14Sj9i1QJfsioU-aOhIzVgSH-QWVxZ6XVAvktHyHCXy3ZQPcUG2kSwXNan_GXUMPPKoNKCup-9lG_M40x9Tpeo6ru_2zjCBFKh9Al-CVNvBBD3Df9mMQXhoAGuJuDg0LFRTUz8sN2Dzx4o8NNdg7jV0a93ZFRjuz0rW0qktoHqf93FpvZxzs6Of0OsLzDE91MoGHglKjBTGph9u-WjA_kpm8moqOTtKR-zUrTg4Pzx2cvnBkdkE7JWqhVYwczgF92GvQDvlvm0483bdm8vBy1-Z2e-Jozj2w5_APBnkHXYWk9blB938ZD7X-6RWA",
+  "expires_in": 43199,
+  "scope": "read",
+  "jti": "2ffdf4af-b2b8-4ef0-83d0-4e39d91e07a5"
+}
+----
+
+You can verify that this is an authentic token by going to https://jwt.io/ and pasting the `access_token` into the *Encoded* section, and then putting the following public key (this is retrieved from the https://github.com/SMARTRACTECHNOLOGY/smartcosmos-cluster-config/blob/master/application.yml[Application Configuration YML]) into the Verify Signature section.
+
+----
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAhLD+JUbjIKXzIJECP19V
+EKW5MQCFM7sIRiHeEgSh9pSpcn0W2fyDgUfZuSgWp6GCjmRaTrFwVt9zhUrOC/Nq
+VyaYvV5nwqaNv02CkAMpRBWpFKcdMdx2mMjDGvklY2BIvG8X/9BWUhWyvX5Ye0Vb
+MLIfcg2sLcqJQ/tpB9GAZJGitjP051KEJuOodrZTUQwrcz7cIUQGsT3jau5WjyIm
+wc7WG5jExUkXMcdRIo9eQAMNfl/PpW1eb648Tymmj4C4pT5DTYIjF0p6V+TSCfaP
+H7qQPYIAx4HfKd74sY/0Jom42Vml4YnNZuDQWm9Z+K79MI3GQXbXB/Rng+fAwilf
+PQIDAQAB
+-----END PUBLIC KEY-----
 ----
