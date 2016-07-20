@@ -7,13 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import javax.annotation.PostConstruct;
 
 import lombok.extern.slf4j.Slf4j;
-import net.smartcosmos.cluster.auth.domain.UserResponse;
-import net.smartcosmos.security.SecurityResourceProperties;
-import net.smartcosmos.security.user.SmartCosmosCachedUser;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -43,9 +39,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * @author voor
- */
+import net.smartcosmos.cluster.auth.domain.UserResponse;
+import net.smartcosmos.security.SecurityResourceProperties;
+import net.smartcosmos.security.user.SmartCosmosCachedUser;
+
 @Slf4j
 @Service
 @Profile("!test")
@@ -122,7 +119,7 @@ public class SmartCosmosAuthenticationProvider
                                      UsernamePasswordAuthenticationToken authentication) throws InternalAuthenticationServiceException {
         try {
             return this.restTemplate
-                .exchange(userDetailsServerLocationUri + "/{username}",
+                .exchange(userDetailsServerLocationUri + "/authenticate",
                     HttpMethod.POST, new HttpEntity<Object>(authentication),
                     UserResponse.class, username)
                 .getBody();
@@ -175,8 +172,8 @@ public class SmartCosmosAuthenticationProvider
         log.info("Received response of: {}", userResponse);
 
         final SmartCosmosCachedUser user = new SmartCosmosCachedUser(
-                userResponse.getAccountUrn(), userResponse.getUserUrn(), userResponse.getUsername(),
-                userResponse.getPasswordHash(), userResponse.getRoles().stream()
+                userResponse.getTenantUrn(), userResponse.getUserUrn(), userResponse.getUsername(),
+                userResponse.getPasswordHash(), userResponse.getAuthorities().stream()
                         .map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
 
         users.put(userResponse.getUsername(), user);
