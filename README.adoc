@@ -54,3 +54,5 @@ H7qQPYIAx4HfKd74sY/0Jom42Vml4YnNZuDQWm9Z+K79MI3GQXbXB/Rng+fAwilf
 PQIDAQAB
 -----END PUBLIC KEY-----
 ----
+
+It's recommend to start the Auth Server after startup in the other services, simply to avoid waiting on the Service Discovery refresh time.
