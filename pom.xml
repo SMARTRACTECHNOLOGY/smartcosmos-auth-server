@@ -96,4 +96,10 @@
             </plugin>
         </plugins>
     </build>
+    <scm>
+        <connection>scm:git:ssh://git@github.com/SMARTRACTECHNOLOGY/smartcosmos-auth-server.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/SMARTRACTECHNOLOGY/smartcosmos-auth-server.git</developerConnection>
+        <url>https://github.com/SMARTRACTECHNOLOGY/smartcosmos-auth-server/tree/master/</url>
+        <tag>HEAD</tag>
+    </scm>
 </project>
