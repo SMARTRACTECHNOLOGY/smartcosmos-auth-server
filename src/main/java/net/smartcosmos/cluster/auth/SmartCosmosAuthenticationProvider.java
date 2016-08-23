@@ -145,7 +145,7 @@ public class SmartCosmosAuthenticationProvider
             UsernamePasswordAuthenticationToken authentication)
                     throws AuthenticationException {
 
-        log.info("Authenticating, {}", username);
+        log.debug("Authenticating, {}", username);
 
         // TODO Improve the caching mechanisms.
         if (users.containsKey(username)) {
@@ -168,8 +168,7 @@ public class SmartCosmosAuthenticationProvider
 
         UserResponse userResponse = fetchUser(username,authentication);
 
-
-        log.info("Received response of: {}", userResponse);
+        log.trace("Received response of: {}", userResponse);
 
         final SmartCosmosCachedUser user = new SmartCosmosCachedUser(
                 userResponse.getTenantUrn(), userResponse.getUserUrn(), userResponse.getUsername(),
