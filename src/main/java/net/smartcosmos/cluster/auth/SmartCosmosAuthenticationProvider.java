@@ -13,12 +13,14 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.json.JacksonJsonParser;
+import org.springframework.boot.json.JsonParser;
 import org.springframework.cloud.netflix.ribbon.RibbonClientHttpRequestFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpRequest;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
@@ -33,15 +35,19 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.common.exceptions.InvalidClientException;
+import org.springframework.security.oauth2.common.exceptions.OAuth2Exception;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Base64Utils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import net.smartcosmos.cluster.auth.domain.UserResponse;
 import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.user.SmartCosmosCachedUser;
+
+import static org.apache.commons.lang.StringUtils.defaultIfBlank;
 
 @Slf4j
 @Service
@@ -115,27 +121,45 @@ public class SmartCosmosAuthenticationProvider
         }
     }
 
-    protected UserResponse fetchUser(String username,
-                                     UsernamePasswordAuthenticationToken authentication) throws InternalAuthenticationServiceException {
+    protected UserResponse fetchUser(
+        String username,
+        UsernamePasswordAuthenticationToken authentication) throws AuthenticationException, OAuth2Exception {
+
         try {
             return this.restTemplate
                 .exchange(userDetailsServerLocationUri + "/authenticate",
-                    HttpMethod.POST, new HttpEntity<Object>(authentication),
-                    UserResponse.class, username)
+                          HttpMethod.POST, new HttpEntity<Object>(authentication),
+                          UserResponse.class, username)
                 .getBody();
-        }
-        catch (HttpClientErrorException e) {
-            if (HttpStatus.UNAUTHORIZED.equals(e.getStatusCode())) {
-                log.debug(
-                    "User Details Service not properly configured to use SMART COSMOS Security Credentials; all requests will fail.");
-                throw new InternalAuthenticationServiceException(e.getMessage(), e);
+        } catch (HttpStatusCodeException e) {
+            log.debug("Fetching details for user {} with authentication token {} failed: {} - {}",
+                      username,
+                      authentication,
+                      e.toString(),
+                      e.getResponseBodyAsString());
+            switch (e.getStatusCode()) {
+                case UNAUTHORIZED:
+                    log.warn(
+                        "Auth Server or User Details Service not properly configured to use SMART COSMOS Security Credentials; all requests will "
+                        + "fail.");
+                    // creates an invalid_client OAuthException further on
+                    throw new InvalidClientException("Invalid client credentials for user details service");
+                case BAD_REQUEST:
+                    String responseMessage = getErrorResponseMessage(e);
+                    if (!StringUtils.isEmpty(responseMessage)) {
+                        // creates an invalid_grant OAuthException further on
+                        // see org.springframework.security.oauth2.provider.password.ResourceOwnerPasswordTokenGranter
+                        throw new BadCredentialsException(responseMessage, e);
+                    }
+                    throw new InternalAuthenticationServiceException(e.getMessage(), e);
+                case INTERNAL_SERVER_ERROR:
+                    throw new InternalAuthenticationServiceException(defaultIfBlank(getErrorResponseMessage(e),
+                                                                                    e.getMessage()), e);
+                default:
+                    throw new InternalAuthenticationServiceException(e.getMessage(), e);
             }
-            else {
-                throw new InternalAuthenticationServiceException(e.getMessage(), e);
-            }
-        }
-        catch (Exception e) {
-            log.debug("InternalAuthenticationServiceException", e);
+        } catch (Exception e) {
+            log.debug("Fetching details for user {} with authentication token {} failed: {}", username, authentication, e);
             throw new InternalAuthenticationServiceException(e.getMessage(), e);
         }
     }
@@ -196,6 +220,20 @@ public class SmartCosmosAuthenticationProvider
                     + " in the cache, did the user never properly authenticate?");
         }
         return users.get(username);
+    }
+
+    private String getErrorResponseMessage(HttpStatusCodeException exception) {
+
+        MediaType contentType = exception.getResponseHeaders()
+            .getContentType();
+        if (MediaType.APPLICATION_JSON.equals(contentType) || MediaType.APPLICATION_JSON_UTF8.equals(contentType)) {
+            JsonParser jsonParser = new JacksonJsonParser();
+            Map<String, Object> responseBody = jsonParser.parseMap(exception.getResponseBodyAsString());
+            if (responseBody.containsKey("message") && responseBody.get("message") instanceof String) {
+                return (String) responseBody.get("message");
+            }
+        }
+        return "";
     }
 
     private static class BasicAuthorizationInterceptor
