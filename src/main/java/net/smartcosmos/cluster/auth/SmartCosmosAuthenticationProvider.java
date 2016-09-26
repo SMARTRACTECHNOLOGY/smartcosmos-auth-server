@@ -150,14 +150,9 @@ public class SmartCosmosAuthenticationProvider
                         // see org.springframework.security.oauth2.provider.password.ResourceOwnerPasswordTokenGranter
                         throw new BadCredentialsException(responseMessage, e);
                     }
-                    // creates an unauthorized response further on
-                    throw new InternalAuthenticationServiceException(e.getMessage(), e);
-                case INTERNAL_SERVER_ERROR:
-                    // creates a server_error response further on
-                    throw new RuntimeException(defaultIfBlank(getErrorResponseMessage(e), e.getMessage()), e);
                 default:
                     // creates a server_error response further on
-                    throw new RuntimeException(e.getMessage(), e);
+                    throw new RuntimeException(defaultIfBlank(getErrorResponseMessage(e), e.getMessage()), e);
             }
         } catch (Exception e) {
             log.debug("Fetching details for user {} with authentication token {} failed: {}", username, authentication, e);
