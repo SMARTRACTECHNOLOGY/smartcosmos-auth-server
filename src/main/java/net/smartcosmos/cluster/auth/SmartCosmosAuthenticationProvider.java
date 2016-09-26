@@ -35,7 +35,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.common.exceptions.InvalidClientException;
 import org.springframework.security.oauth2.common.exceptions.OAuth2Exception;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Base64Utils;
@@ -142,8 +141,8 @@ public class SmartCosmosAuthenticationProvider
                     log.warn(
                         "Auth Server or User Details Service not properly configured to use SMART COSMOS Security Credentials; all requests will "
                         + "fail.");
-                    // creates an invalid_client OAuthException further on
-                    throw new InvalidClientException("Invalid client credentials for user details service");
+                    // creates a server_error response further on
+                    throw new IllegalStateException("Service not properly configured to use credentials", e);
                 case BAD_REQUEST:
                     String responseMessage = getErrorResponseMessage(e);
                     if (!StringUtils.isEmpty(responseMessage)) {
@@ -151,12 +150,14 @@ public class SmartCosmosAuthenticationProvider
                         // see org.springframework.security.oauth2.provider.password.ResourceOwnerPasswordTokenGranter
                         throw new BadCredentialsException(responseMessage, e);
                     }
+                    // creates an unauthorized response further on
                     throw new InternalAuthenticationServiceException(e.getMessage(), e);
                 case INTERNAL_SERVER_ERROR:
-                    throw new InternalAuthenticationServiceException(defaultIfBlank(getErrorResponseMessage(e),
-                                                                                    e.getMessage()), e);
+                    // creates a server_error response further on
+                    throw new RuntimeException(defaultIfBlank(getErrorResponseMessage(e), e.getMessage()), e);
                 default:
-                    throw new InternalAuthenticationServiceException(e.getMessage(), e);
+                    // creates a server_error response further on
+                    throw new RuntimeException(e.getMessage(), e);
             }
         } catch (Exception e) {
             log.debug("Fetching details for user {} with authentication token {} failed: {}", username, authentication, e);
