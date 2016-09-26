@@ -26,7 +26,6 @@ import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.InterceptingClientHttpRequestFactory;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.AbstractUserDetailsAuthenticationProvider;
 import org.springframework.security.core.AuthenticationException;
@@ -158,7 +157,7 @@ public class SmartCosmosAuthenticationProvider
             }
         } catch (Exception e) {
             log.debug("Fetching details for user {} with authentication token {} failed: {}", username, authentication, e);
-            throw new InternalAuthenticationServiceException(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
