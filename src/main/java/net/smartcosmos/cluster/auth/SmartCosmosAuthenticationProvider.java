@@ -148,10 +148,12 @@ public class SmartCosmosAuthenticationProvider
                     if (!StringUtils.isEmpty(responseMessage)) {
                         // creates an invalid_grant OAuthException further on
                         // see org.springframework.security.oauth2.provider.password.ResourceOwnerPasswordTokenGranter
+                        // also see https://tools.ietf.org/html/rfc6749#section-5.2
                         throw new BadCredentialsException(responseMessage, e);
                     }
                 default:
                     // creates a server_error response further on
+                    // see https://tools.ietf.org/html/rfc6749#section-4.1.2.1
                     throw new RuntimeException(defaultIfBlank(getErrorResponseMessage(e), e.getMessage()), e);
             }
         } catch (Exception e) {
