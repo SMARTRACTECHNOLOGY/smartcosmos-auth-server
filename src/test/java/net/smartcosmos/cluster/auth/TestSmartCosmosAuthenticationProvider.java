@@ -1,18 +1,19 @@
 package net.smartcosmos.cluster.auth;
 
-import net.smartcosmos.cluster.auth.domain.UserResponse;
-import net.smartcosmos.security.SecurityResourceProperties;
+import java.util.Arrays;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cloud.netflix.ribbon.RibbonClientHttpRequestFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
+import net.smartcosmos.cluster.auth.domain.UserResponse;
+import net.smartcosmos.security.SecurityResourceProperties;
 
 /**
  * @author voor
@@ -25,11 +26,11 @@ public class TestSmartCosmosAuthenticationProvider
 
     @Autowired
     public TestSmartCosmosAuthenticationProvider(
-            RibbonClientHttpRequestFactory ribbonClientHttpRequestFactory,
-            SecurityResourceProperties securityResourceProperties,
-            PasswordEncoder passwordEncoder) {
-        super(ribbonClientHttpRequestFactory, securityResourceProperties,
-                passwordEncoder);
+        SecurityResourceProperties securityResourceProperties,
+        PasswordEncoder passwordEncoder,
+        RestTemplate restTemplate) {
+
+        super(securityResourceProperties, passwordEncoder, restTemplate);
     }
 
     @Override
