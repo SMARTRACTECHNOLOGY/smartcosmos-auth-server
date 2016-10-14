@@ -11,6 +11,7 @@ No new features are added in this release.
 * PROFILES-667 Add zipkin starter for distributed tracing
 * OBJECTS-1028 Improve Handling of User Details Errors in Auth Server
 * OBJECTS-1030 Auth server returns incorrect error responses
+* OBJECTS-1043 Use RestTemplate bean to allow for distributed tracing
 
 == Release 3.0.0 (August 12, 2016)
 

@@ -1,30 +1,20 @@
 package net.smartcosmos.cluster.auth;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.annotation.PostConstruct;
 
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.boot.json.JsonParser;
-import org.springframework.cloud.netflix.ribbon.RibbonClientHttpRequestFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.ClientHttpRequestExecution;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
-import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.http.client.InterceptingClientHttpRequestFactory;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.AbstractUserDetailsAuthenticationProvider;
@@ -36,7 +26,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.common.exceptions.OAuth2Exception;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Base64Utils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
@@ -52,38 +41,25 @@ import static org.apache.commons.lang.StringUtils.defaultIfBlank;
 @Profile("!test")
 @EnableConfigurationProperties({ SecurityResourceProperties.class })
 public class SmartCosmosAuthenticationProvider
-        extends AbstractUserDetailsAuthenticationProvider implements UserDetailsService {
+    extends AbstractUserDetailsAuthenticationProvider implements UserDetailsService {
 
     private final PasswordEncoder passwordEncoder;
-    private final RibbonClientHttpRequestFactory ribbonClientHttpRequestFactory;
-    private final SecurityResourceProperties securityResourceProperties;
     private final Map<String, SmartCosmosCachedUser> users = new HashMap<>();
     private String userDetailsServerLocationUri;
     private RestTemplate restTemplate;
 
     @Autowired
     public SmartCosmosAuthenticationProvider(
-            RibbonClientHttpRequestFactory ribbonClientHttpRequestFactory,
-            SecurityResourceProperties securityResourceProperties,
-            PasswordEncoder passwordEncoder) {
-        this.ribbonClientHttpRequestFactory = ribbonClientHttpRequestFactory;
-        this.securityResourceProperties = securityResourceProperties;
-        this.passwordEncoder = passwordEncoder;
-    }
+        SecurityResourceProperties securityResourceProperties,
+        PasswordEncoder passwordEncoder,
+        @Qualifier("userDetailsRestTemplate") RestTemplate restTemplate) {
 
-    @PostConstruct
-    public void init() {
+        this.passwordEncoder = passwordEncoder;
+        this.restTemplate = restTemplate;
+
         this.userDetailsServerLocationUri = securityResourceProperties.getUserDetails()
-                .getServer().getLocationUri();
-        final String name = securityResourceProperties.getUserDetails().getUser()
-                .getName();
-        final String password = securityResourceProperties.getUserDetails().getUser()
-                .getPassword();
-        List<ClientHttpRequestInterceptor> interceptors = Collections
-                .<ClientHttpRequestInterceptor> singletonList(
-                        new BasicAuthorizationInterceptor(name, password));
-        restTemplate = new RestTemplate(new InterceptingClientHttpRequestFactory(
-                ribbonClientHttpRequestFactory, interceptors));
+            .getServer()
+            .getLocationUri();
     }
 
     /**
@@ -96,38 +72,38 @@ public class SmartCosmosAuthenticationProvider
      * @throws AuthenticationException failure to authenticate.
      */
     @Override
-    protected void additionalAuthenticationChecks(UserDetails userDetails,
-            UsernamePasswordAuthenticationToken authentication)
-                    throws AuthenticationException {
+    protected void additionalAuthenticationChecks(
+        UserDetails userDetails,
+        UsernamePasswordAuthenticationToken authentication)
+        throws AuthenticationException {
 
         if (authentication.getCredentials() == null) {
             logger.debug("Authentication failed: no credentials provided");
 
             throw new BadCredentialsException(messages.getMessage(
-                    "AbstractUserDetailsAuthenticationProvider.badCredentials",
-                    "Bad credentials"));
+                "AbstractUserDetailsAuthenticationProvider.badCredentials",
+                "Bad credentials"));
         }
 
-        String presentedPassword = authentication.getCredentials().toString();
+        String presentedPassword = authentication.getCredentials()
+            .toString();
 
         if (!passwordEncoder.matches(presentedPassword, userDetails.getPassword())) {
             logger.debug("Authentication failed: password does not match stored value");
 
             throw new BadCredentialsException(messages.getMessage(
-                    "AbstractUserDetailsAuthenticationProvider.badCredentials",
-                    "Bad credentials"));
+                "AbstractUserDetailsAuthenticationProvider.badCredentials",
+                "Bad credentials"));
         }
     }
 
-    protected UserResponse fetchUser(
-        String username,
-        UsernamePasswordAuthenticationToken authentication) throws AuthenticationException, OAuth2Exception {
+    protected UserResponse fetchUser(String username, UsernamePasswordAuthenticationToken authentication)
+        throws AuthenticationException, OAuth2Exception {
 
         try {
-            return this.restTemplate
-                .exchange(userDetailsServerLocationUri + "/authenticate",
-                          HttpMethod.POST, new HttpEntity<Object>(authentication),
-                          UserResponse.class, username)
+            return restTemplate.exchange(userDetailsServerLocationUri + "/authenticate",
+                                         HttpMethod.POST, new HttpEntity<Object>(authentication),
+                                         UserResponse.class, username)
                 .getBody();
         } catch (HttpStatusCodeException e) {
             log.debug("Fetching details for user {} with authentication token {} failed: {} - {}",
@@ -162,9 +138,10 @@ public class SmartCosmosAuthenticationProvider
     }
 
     @Override
-    protected UserDetails retrieveUser(String username,
-            UsernamePasswordAuthenticationToken authentication)
-                    throws AuthenticationException {
+    protected UserDetails retrieveUser(
+        String username,
+        UsernamePasswordAuthenticationToken authentication)
+        throws AuthenticationException {
 
         log.debug("Authenticating, {}", username);
 
@@ -172,29 +149,35 @@ public class SmartCosmosAuthenticationProvider
         if (users.containsKey(username)) {
             final SmartCosmosCachedUser cachedUser = users.get(username);
 
-            if (System.currentTimeMillis() > cachedUser.getCachedDate().getTime()) {
+            if (System.currentTimeMillis() > cachedUser.getCachedDate()
+                .getTime()) {
                 users.remove(username);
-            }
-            else {
+            } else {
                 if (!StringUtils.isEmpty(authentication.getCredentials())
-                        && !StringUtils.isEmpty(cachedUser.getPassword())) {
+                    && !StringUtils.isEmpty(cachedUser.getPassword())) {
                     if (passwordEncoder.matches(
-                            authentication.getCredentials().toString(),
-                            cachedUser.getPassword())) {
+                        authentication.getCredentials()
+                            .toString(),
+                        cachedUser.getPassword())) {
                         return cachedUser;
                     }
                 }
             }
         }
 
-        UserResponse userResponse = fetchUser(username,authentication);
+        UserResponse userResponse = fetchUser(username, authentication);
 
         log.trace("Received response of: {}", userResponse);
 
         final SmartCosmosCachedUser user = new SmartCosmosCachedUser(
-                userResponse.getTenantUrn(), userResponse.getUserUrn(), userResponse.getUsername(),
-                userResponse.getPasswordHash(), userResponse.getAuthorities().stream()
-                        .map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
+            userResponse.getTenantUrn(),
+            userResponse.getUserUrn(),
+            userResponse.getUsername(),
+            userResponse.getPasswordHash(),
+            userResponse.getAuthorities()
+                .stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toSet()));
 
         users.put(userResponse.getUsername(), user);
 
@@ -211,10 +194,11 @@ public class SmartCosmosAuthenticationProvider
      */
     @Override
     public UserDetails loadUserByUsername(String username)
-            throws UsernameNotFoundException {
+        throws UsernameNotFoundException {
+
         if (!users.containsKey(username)) {
             throw new UsernameNotFoundException("Could not find " + username
-                    + " in the cache, did the user never properly authenticate?");
+                                                + " in the cache, did the user never properly authenticate?");
         }
         return users.get(username);
     }
@@ -231,29 +215,5 @@ public class SmartCosmosAuthenticationProvider
             }
         }
         return "";
-    }
-
-    private static class BasicAuthorizationInterceptor
-            implements ClientHttpRequestInterceptor {
-
-        private final String username;
-
-        private final String password;
-
-        BasicAuthorizationInterceptor(String username, String password) {
-            this.username = username;
-            this.password = (password == null ? "" : password);
-        }
-
-        @Override
-        public ClientHttpResponse intercept(HttpRequest request, byte[] body,
-                ClientHttpRequestExecution execution) throws IOException {
-            String token = Base64Utils
-                    .encodeToString((this.username + ":" + this.password)
-                            .getBytes(Charset.forName("UTF-8")));
-            request.getHeaders().add("Authorization", "Basic " + token);
-            return execution.execute(request, body);
-        }
-
     }
 }
