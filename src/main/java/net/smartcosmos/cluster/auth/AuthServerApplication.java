@@ -1,12 +1,10 @@
 package net.smartcosmos.cluster.auth;
 
+import java.security.KeyPair;
+import javax.servlet.Filter;
+
 import lombok.extern.slf4j.Slf4j;
-import net.smartcosmos.cluster.auth.filter.CsrfHeaderFilter;
-import net.smartcosmos.cluster.auth.handlers.AuthUnauthorizedEntryPoint;
-import net.smartcosmos.security.SecurityResourceProperties;
-import net.smartcosmos.security.authentication.direct.DirectAccessDeniedHandler;
-import net.smartcosmos.security.authentication.direct.EnableDirectHandlers;
-import net.smartcosmos.security.user.SmartCosmosUserAuthenticationConverter;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
@@ -48,8 +46,13 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
-import javax.servlet.Filter;
-import java.security.KeyPair;
+import net.smartcosmos.annotation.EnableSmartCosmosMonitoring;
+import net.smartcosmos.cluster.auth.filter.CsrfHeaderFilter;
+import net.smartcosmos.cluster.auth.handlers.AuthUnauthorizedEntryPoint;
+import net.smartcosmos.security.SecurityResourceProperties;
+import net.smartcosmos.security.authentication.direct.DirectAccessDeniedHandler;
+import net.smartcosmos.security.authentication.direct.EnableDirectHandlers;
+import net.smartcosmos.security.user.SmartCosmosUserAuthenticationConverter;
 
 /**
  * @author voor
@@ -59,6 +62,7 @@ import java.security.KeyPair;
 @SessionAttributes("authorizationRequest")
 @Slf4j
 @EnableDiscoveryClient
+@EnableSmartCosmosMonitoring
 public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
     public static void main(String[] args) {
