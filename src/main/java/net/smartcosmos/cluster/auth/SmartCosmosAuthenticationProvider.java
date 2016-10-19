@@ -77,8 +77,10 @@ public class SmartCosmosAuthenticationProvider
         UsernamePasswordAuthenticationToken authentication)
         throws AuthenticationException {
 
+        String username = userDetails.getUsername() != null ? userDetails.getUsername() : "(NULL)";
+
         if (authentication.getCredentials() == null) {
-            logger.debug("Authentication failed: no credentials provided");
+            log.debug("Authentication failed for user {}: no credentials provided", username);
 
             throw new BadCredentialsException(messages.getMessage(
                 "AbstractUserDetailsAuthenticationProvider.badCredentials",
@@ -89,7 +91,7 @@ public class SmartCosmosAuthenticationProvider
             .toString();
 
         if (!passwordEncoder.matches(presentedPassword, userDetails.getPassword())) {
-            logger.debug("Authentication failed: password does not match stored value");
+            log.debug("Authentication failed for user {}: password does not match stored value", username);
 
             throw new BadCredentialsException(messages.getMessage(
                 "AbstractUserDetailsAuthenticationProvider.badCredentials",
@@ -101,10 +103,13 @@ public class SmartCosmosAuthenticationProvider
         throws AuthenticationException, OAuth2Exception {
 
         try {
-            return restTemplate.exchange(userDetailsServerLocationUri + "/authenticate",
-                                         HttpMethod.POST, new HttpEntity<Object>(authentication),
-                                         UserResponse.class, username)
+            UserResponse response = restTemplate.exchange(userDetailsServerLocationUri + "/authenticate",
+                                                          HttpMethod.POST, new HttpEntity<Object>(authentication),
+                                                          UserResponse.class, username)
                 .getBody();
+            // this should not increase the log output too much, because user details will be only fetched on a cache miss
+            log.debug("Fetching details for user {} with authentication token {} succeeded: {}", username, authentication, response);
+            return response;
         } catch (HttpStatusCodeException e) {
             log.debug("Fetching details for user {} with authentication token {} failed: {} - {}",
                       username,
@@ -159,6 +164,7 @@ public class SmartCosmosAuthenticationProvider
                         authentication.getCredentials()
                             .toString(),
                         cachedUser.getPassword())) {
+                        log.debug("Retrieved user {} from auth server cache.", cachedUser.getUsername());
                         return cachedUser;
                     }
                 }
@@ -181,6 +187,7 @@ public class SmartCosmosAuthenticationProvider
 
         users.put(userResponse.getUsername(), user);
 
+        log.debug("Retrieved user {} from user details service.", userResponse.getUsername());
         return user;
     }
 
@@ -197,8 +204,9 @@ public class SmartCosmosAuthenticationProvider
         throws UsernameNotFoundException {
 
         if (!users.containsKey(username)) {
-            throw new UsernameNotFoundException("Could not find " + username
-                                                + " in the cache, did the user never properly authenticate?");
+            String message = "Could not find " + username + " in the cache, did the user never properly authenticate?";
+            log.debug(message);
+            throw new UsernameNotFoundException(message);
         }
         return users.get(username);
     }
