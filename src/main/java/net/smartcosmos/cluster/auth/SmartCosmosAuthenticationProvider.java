@@ -43,10 +43,12 @@ import static org.apache.commons.lang.StringUtils.defaultIfBlank;
 public class SmartCosmosAuthenticationProvider
     extends AbstractUserDetailsAuthenticationProvider implements UserDetailsService {
 
+    public static final int MILLISECS_PER_SEC = 1000;
     private final PasswordEncoder passwordEncoder;
     private final Map<String, SmartCosmosCachedUser> users = new HashMap<>();
     private String userDetailsServerLocationUri;
     private RestTemplate restTemplate;
+    private Integer cachedUserKeepAliveSecs;
 
     @Autowired
     public SmartCosmosAuthenticationProvider(
@@ -56,6 +58,7 @@ public class SmartCosmosAuthenticationProvider
 
         this.passwordEncoder = passwordEncoder;
         this.restTemplate = restTemplate;
+        this.cachedUserKeepAliveSecs = securityResourceProperties.getCachedUserKeepAliveSecs();
 
         this.userDetailsServerLocationUri = securityResourceProperties.getUserDetails()
             .getServer()
@@ -154,8 +157,8 @@ public class SmartCosmosAuthenticationProvider
         if (users.containsKey(username)) {
             final SmartCosmosCachedUser cachedUser = users.get(username);
 
-            if (System.currentTimeMillis() > cachedUser.getCachedDate()
-                .getTime()) {
+            if (System.currentTimeMillis() - cachedUser.getCachedDate()
+                .getTime() > cachedUserKeepAliveSecs * MILLISECS_PER_SEC) {
                 users.remove(username);
             } else {
                 if (!StringUtils.isEmpty(authentication.getCredentials())
