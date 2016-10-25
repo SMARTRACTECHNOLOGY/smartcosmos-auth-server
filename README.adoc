@@ -4,6 +4,7 @@ ifdef::env-github[:USER: SMARTRACTECHNOLOGY]
 ifdef::env-github[:REPO: smartcosmos-auth-server]
 ifdef::env-github[:BRANCH: master]
 
+image::https://jenkins.smartcosmos.net/buildStatus/icon?job={USER}/{REPO}/{BRANCH}[Build Status, link=https://jenkins.smartcosmos.net/job/{USER}/job/{REPO}/job/{BRANCH}/]
 image::https://travis-ci.org/{USER}/{REPO}.svg?branch={BRANCH}[Build Status, link=https://travis-ci.org/{USER}/{REPO}]
 image::https://coveralls.io/repos/github/{USER}/{REPO}/badge.svg?branch={BRANCH}[Coverage Status, link=https://coveralls.io/github/{USER}/{REPO}?branch={BRANCH}]
 
