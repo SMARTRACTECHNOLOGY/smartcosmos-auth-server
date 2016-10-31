@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.netflix.ribbon.RibbonClientHttpRequestFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -14,7 +13,6 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.http.client.InterceptingClientHttpRequestFactory;
 import org.springframework.util.Base64Utils;
 import org.springframework.web.client.RestTemplate;
 
@@ -28,9 +26,7 @@ public class RestTemplateConfiguration {
 
     @Bean
     @Autowired
-    public RestTemplate userDetailsRestTemplate(
-        RibbonClientHttpRequestFactory ribbonClientHttpRequestFactory,
-        SecurityResourceProperties securityResourceProperties) {
+    public RestTemplate userDetailsRestTemplate(SecurityResourceProperties securityResourceProperties) {
 
         final String name = securityResourceProperties.getUserDetails()
             .getUser()
@@ -43,7 +39,9 @@ public class RestTemplateConfiguration {
             name,
             password));
 
-        return new RestTemplate(new InterceptingClientHttpRequestFactory(ribbonClientHttpRequestFactory, interceptors));
+        RestTemplate userDetailsRestTemplate = new RestTemplate();
+        userDetailsRestTemplate.setInterceptors(interceptors);
+        return userDetailsRestTemplate;
     }
 
     private static class BasicAuthorizationInterceptor implements ClientHttpRequestInterceptor {
