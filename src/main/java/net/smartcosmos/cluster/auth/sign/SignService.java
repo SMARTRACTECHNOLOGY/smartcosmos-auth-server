@@ -3,6 +3,10 @@ package net.smartcosmos.cluster.auth.sign;
 import java.security.PrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 
+import javax.security.auth.DestroyFailedException;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.security.jwt.JwtHelper;
@@ -16,6 +20,7 @@ import net.smartcosmos.security.SecurityResourceProperties;
 /**
  * @author mgarcia
  */
+@Slf4j
 @EnableConfigurationProperties({ SecurityResourceProperties.class })
 @Service
 public class SignService {
@@ -38,8 +43,16 @@ public class SignService {
                 securityResourceProperties.getKeystore().getKeypairPassword())
             .getPrivate();
 
-        Signer signer = new RsaSigner((RSAPrivateKey) privateKey);
+        try {
+            Signer signer = new RsaSigner((RSAPrivateKey) privateKey);
+            return JwtHelper.encode(base64Payload, signer).getEncoded();
+        } finally {
+            try {
+                privateKey.destroy();
+            } catch (DestroyFailedException e) {
+                log.warn("Failed to destroy key", e);
+            }
+        }
 
-        return JwtHelper.encode(base64Payload, signer).getEncoded();
     }
 }
