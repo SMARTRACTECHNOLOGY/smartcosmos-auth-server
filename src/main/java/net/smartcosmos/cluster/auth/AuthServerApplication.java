@@ -212,8 +212,6 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
             JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
             SmartCosmosUserAuthenticationConverter smartCosmosUserAuthenticationConverter = new SmartCosmosUserAuthenticationConverter();
 
-            smartCosmosUserAuthenticationConverter
-                .setUserDetailsService(smartCosmosAuthenticationProvider);
             ((DefaultAccessTokenConverter) converter.getAccessTokenConverter())
                 .setUserTokenConverter(smartCosmosUserAuthenticationConverter);
             KeyPair keyPair = new KeyStoreKeyFactory(
@@ -247,6 +245,7 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
             endpoints
                 .authenticationManager(new ProviderManager(Arrays.asList(smartCosmosAuthenticationProvider)))
+                .userDetailsService(smartCosmosAuthenticationProvider)
                 .accessTokenConverter(jwtAccessTokenConverter());
         }
 
