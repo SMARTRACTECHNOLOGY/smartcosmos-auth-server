@@ -1,6 +1,5 @@
 package net.smartcosmos.cluster.auth;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -45,7 +44,6 @@ public class SmartCosmosAuthenticationProvider
 
     public static final int MILLISECS_PER_SEC = 1000;
     private final PasswordEncoder passwordEncoder;
-    private final Map<String, SmartCosmosCachedUser> users = new HashMap<>();
     private String userDetailsServerLocationUri;
     private RestTemplate restTemplate;
     private Integer cachedUserKeepAliveSecs;
@@ -168,25 +166,11 @@ public class SmartCosmosAuthenticationProvider
 
         log.debug("Authenticating, {}", username);
 
-        SmartCosmosCachedUser cachedUser = checkedCachedUser(username);
-        if (cachedUser != null) {
-            if (!StringUtils.isEmpty(authentication.getCredentials())
-                && !StringUtils.isEmpty(cachedUser.getPassword())) {
-                if (passwordEncoder.matches(
-                    authentication.getCredentials()
-                        .toString(),
-                    cachedUser.getPassword())) {
-                    log.debug("Retrieved user {} from auth server cache.", cachedUser.getUsername());
-                    return cachedUser;
-                }
-            }
-        }
-
         UserResponse userResponse = fetchUser(username, authentication);
 
         log.trace("Received response of: {}", userResponse);
 
-        final SmartCosmosCachedUser user = new SmartCosmosCachedUser(
+        SmartCosmosCachedUser user = new SmartCosmosCachedUser(
             userResponse.getTenantUrn(),
             userResponse.getUserUrn(),
             userResponse.getUsername(),
@@ -195,8 +179,6 @@ public class SmartCosmosAuthenticationProvider
                 .stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet()));
-
-        users.put(userResponse.getUsername(), user);
 
         log.debug("Retrieved user {} from user details service.", userResponse.getUsername());
         return user;
@@ -216,21 +198,6 @@ public class SmartCosmosAuthenticationProvider
         return "";
     }
 
-    private SmartCosmosCachedUser checkedCachedUser(String username) {
-
-        if (users.containsKey(username)) {
-            final SmartCosmosCachedUser cachedUser = users.get(username);
-
-            if (System.currentTimeMillis() - cachedUser.getCachedDate()
-                .getTime() > cachedUserKeepAliveSecs * MILLISECS_PER_SEC) {
-                users.remove(username);
-            } else {
-                return cachedUser;
-            }
-        }
-        return null;
-    }
-
     /**
      * This method is only utilized during the REFRESH Token phase and is designed only to see if the user account is still active.  No password is
      * provided, because there was no password used by the client -- <b>only</b> the refresh token.
@@ -243,11 +210,6 @@ public class SmartCosmosAuthenticationProvider
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         log.debug("Checking to see if account {} is still active", username);
-
-        //        SmartCosmosCachedUser user = checkedCachedUser(username);
-        //        if (user != null) {
-        //            return user;
-        //        }
 
         UserResponse userResponse = fetchUser(username, null);
 
@@ -264,8 +226,6 @@ public class SmartCosmosAuthenticationProvider
                 .stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet()));
-
-        users.put(userResponse.getUsername(), user);
 
         return user;
     }
