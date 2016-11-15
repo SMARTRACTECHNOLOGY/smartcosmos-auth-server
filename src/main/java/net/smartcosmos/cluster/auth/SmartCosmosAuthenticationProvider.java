@@ -106,13 +106,28 @@ public class SmartCosmosAuthenticationProvider
         throws AuthenticationException, OAuth2Exception {
 
         try {
-            UserResponse response = restTemplate.exchange(userDetailsServerLocationUri + "/authenticate",
-                                                          HttpMethod.POST, new HttpEntity<Object>(authentication),
-                                                          UserResponse.class, username)
-                .getBody();
-            // this should not increase the log output too much, because user details will be only fetched on a cache miss
-            log.debug("Fetching details for user {} with authentication token {} succeeded: {}", username, authentication, response);
-            return response;
+            if (authentication != null) {
+                // Authenticating the user.
+                UserResponse response = restTemplate.exchange(userDetailsServerLocationUri + "/authenticate",
+                                                              HttpMethod.POST, new HttpEntity<Object>(authentication),
+                                                              UserResponse.class, username)
+                    .getBody();
+
+                // this should not increase the log output too much, because user details will be only fetched on a cache miss
+                log.debug("Fetching details for user {} with authentication token {} succeeded: {}", username, authentication, response);
+                return response;
+            } else {
+                // Checking to see if user is still active
+                UserResponse response = restTemplate.exchange(userDetailsServerLocationUri + "/active/" + username,
+                                                              HttpMethod.GET, HttpEntity.EMPTY,
+                                                              UserResponse.class)
+                    .getBody();
+
+                // this should not increase the log output too much, because user details will be only fetched on a cache miss
+                log.debug("Fetching details for user {} during refresh token succeeded: {}", username, response);
+                return response;
+            }
+
         } catch (HttpStatusCodeException e) {
             log.debug("Fetching details for user {} with authentication token {} failed: {} - {}",
                       username,
@@ -153,23 +168,16 @@ public class SmartCosmosAuthenticationProvider
 
         log.debug("Authenticating, {}", username);
 
-        // TODO Improve the caching mechanisms.
-        if (users.containsKey(username)) {
-            final SmartCosmosCachedUser cachedUser = users.get(username);
-
-            if (System.currentTimeMillis() - cachedUser.getCachedDate()
-                .getTime() > cachedUserKeepAliveSecs * MILLISECS_PER_SEC) {
-                users.remove(username);
-            } else {
-                if (!StringUtils.isEmpty(authentication.getCredentials())
-                    && !StringUtils.isEmpty(cachedUser.getPassword())) {
-                    if (passwordEncoder.matches(
-                        authentication.getCredentials()
-                            .toString(),
-                        cachedUser.getPassword())) {
-                        log.debug("Retrieved user {} from auth server cache.", cachedUser.getUsername());
-                        return cachedUser;
-                    }
+        SmartCosmosCachedUser cachedUser = checkedCachedUser(username);
+        if (cachedUser != null) {
+            if (!StringUtils.isEmpty(authentication.getCredentials())
+                && !StringUtils.isEmpty(cachedUser.getPassword())) {
+                if (passwordEncoder.matches(
+                    authentication.getCredentials()
+                        .toString(),
+                    cachedUser.getPassword())) {
+                    log.debug("Retrieved user {} from auth server cache.", cachedUser.getUsername());
+                    return cachedUser;
                 }
             }
         }
@@ -194,26 +202,6 @@ public class SmartCosmosAuthenticationProvider
         return user;
     }
 
-    /**
-     * This method will retrieve a user from a quasi-user details service. Except this
-     * service is never used for actual authentication
-     *
-     * @param username
-     * @return
-     * @throws UsernameNotFoundException
-     */
-    @Override
-    public UserDetails loadUserByUsername(String username)
-        throws UsernameNotFoundException {
-
-        if (!users.containsKey(username)) {
-            String message = "Could not find " + username + " in the cache, did the user never properly authenticate?";
-            log.debug(message);
-            throw new UsernameNotFoundException(message);
-        }
-        return users.get(username);
-    }
-
     private String getErrorResponseMessage(HttpStatusCodeException exception) {
 
         MediaType contentType = exception.getResponseHeaders()
@@ -226,5 +214,59 @@ public class SmartCosmosAuthenticationProvider
             }
         }
         return "";
+    }
+
+    private SmartCosmosCachedUser checkedCachedUser(String username) {
+
+        if (users.containsKey(username)) {
+            final SmartCosmosCachedUser cachedUser = users.get(username);
+
+            if (System.currentTimeMillis() - cachedUser.getCachedDate()
+                .getTime() > cachedUserKeepAliveSecs * MILLISECS_PER_SEC) {
+                users.remove(username);
+            } else {
+                return cachedUser;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * This method is only utilized during the REFRESH Token phase and is designed only to see if the user account is still active.  No password is
+     * provided, because there was no password used by the client -- <b>only</b> the refresh token.
+     *
+     * @param username
+     * @return
+     * @throws UsernameNotFoundException
+     */
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+
+        log.debug("Checking to see if account {} is still active", username);
+
+        //        SmartCosmosCachedUser user = checkedCachedUser(username);
+        //        if (user != null) {
+        //            return user;
+        //        }
+
+        UserResponse userResponse = fetchUser(username, null);
+
+        log.trace("Received response of: {}", userResponse);
+
+        log.debug("Retrieved user {} from user details service.", userResponse.getUsername());
+
+        final SmartCosmosCachedUser user = new SmartCosmosCachedUser(
+            userResponse.getTenantUrn(),
+            userResponse.getUserUrn(),
+            userResponse.getUsername(),
+            userResponse.getPasswordHash(),
+            userResponse.getAuthorities()
+                .stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toSet()));
+
+        users.put(userResponse.getUsername(), user);
+
+        return user;
     }
 }

@@ -1,6 +1,7 @@
 package net.smartcosmos.cluster.auth;
 
 import java.security.KeyPair;
+import java.util.Arrays;
 import javax.servlet.Filter;
 
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.authentication.configuration.EnableGlobalAuthentication;
@@ -66,40 +68,44 @@ import net.smartcosmos.security.user.SmartCosmosUserAuthenticationConverter;
 public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
     public static void main(String[] args) {
-        new SpringApplicationBuilder(AuthServerApplication.class).web(true).run(args);
+
+        new SpringApplicationBuilder(AuthServerApplication.class).web(true)
+            .run(args);
     }
 
     @Bean
     @Primary
     public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration configuration) throws Exception {
+        AuthenticationConfiguration configuration) throws Exception {
+
         return configuration.getAuthenticationManager();
     }
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/login").setViewName("login");
-        registry.addViewController("/oauth/confirm_access").setViewName("authorize");
+
+        registry.addViewController("/login")
+            .setViewName("login");
+        registry.addViewController("/oauth/confirm_access")
+            .setViewName("authorize");
     }
 
     @Configuration
     @EnableGlobalAuthentication
     @Order(SecurityProperties.ACCESS_OVERRIDE_ORDER - 3)
     protected static class GlobalAuthenticationConfig
-            extends GlobalAuthenticationConfigurerAdapter {
-
-        @Autowired
-        private AuthenticationProvider smartCosmosAuthenticationProvider;
+        extends GlobalAuthenticationConfigurerAdapter {
 
         @Bean
         PasswordEncoder passwordEncoder() {
+
             return new BCryptPasswordEncoder();
         }
 
         @Override
         public void configure(AuthenticationManagerBuilder auth) throws Exception {
+
             log.info("Adding in customer user details authentication provider");
-            auth.authenticationProvider(smartCosmosAuthenticationProvider);
         }
     }
 
@@ -114,6 +120,9 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
         @Autowired
         AuthenticationFailureHandler authenticationFailureHandler;
+
+        @Autowired
+        private AuthenticationProvider smartCosmosAuthenticationProvider;
 
         @Autowired
         LogoutSuccessHandler logoutSuccessHandler;
@@ -162,16 +171,20 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
         @Override
         protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-            auth.parentAuthenticationManager(authenticationManager);
+
+            auth.authenticationProvider(smartCosmosAuthenticationProvider)
+                .parentAuthenticationManager(authenticationManager);
         }
 
         private CsrfTokenRepository csrfTokenRepository() {
+
             HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
             repository.setHeaderName("X-XSRF-TOKEN");
             return repository;
         }
 
         private Filter csrfHeaderFilter() {
+
             return new CsrfHeaderFilter();
         }
     }
@@ -186,52 +199,62 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
         private SecurityResourceProperties securityResourceProperties;
 
         @Autowired
-        private AuthenticationManager authenticationManager;
+        private SmartCosmosAuthenticationProvider smartCosmosAuthenticationProvider;
 
         @Bean
         public JwtAccessTokenConverter jwtAccessTokenConverter() {
 
-            Assert.hasText(securityResourceProperties.getKeystore().getKeypair());
-            Assert.notNull(securityResourceProperties.getKeystore().getLocation());
+            Assert.hasText(securityResourceProperties.getKeystore()
+                               .getKeypair());
+            Assert.notNull(securityResourceProperties.getKeystore()
+                               .getLocation());
 
             JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
             SmartCosmosUserAuthenticationConverter smartCosmosUserAuthenticationConverter = new SmartCosmosUserAuthenticationConverter();
 
             ((DefaultAccessTokenConverter) converter.getAccessTokenConverter())
-                    .setUserTokenConverter(smartCosmosUserAuthenticationConverter);
+                .setUserTokenConverter(smartCosmosUserAuthenticationConverter);
             KeyPair keyPair = new KeyStoreKeyFactory(
-                    securityResourceProperties.getKeystore().getLocation(),
-                    securityResourceProperties.getKeystore().getPassword()).getKeyPair(
-                            securityResourceProperties.getKeystore().getKeypair(),
-                            securityResourceProperties.getKeystore()
-                                    .getKeypairPassword());
+                securityResourceProperties.getKeystore()
+                    .getLocation(),
+                securityResourceProperties.getKeystore()
+                    .getPassword()).getKeyPair(
+                securityResourceProperties.getKeystore()
+                    .getKeypair(),
+                securityResourceProperties.getKeystore()
+                    .getKeypairPassword());
             converter.setKeyPair(keyPair);
             return converter;
         }
 
         @Override
         public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+
             clients.inMemory()
-                    // TODO This is just here for development purposes.
-                    .withClient(securityResourceProperties.getClientId())
-                    .secret(securityResourceProperties.getClientSecret())
-                    .authorizedGrantTypes("authorization_code", "refresh_token",
-                            "implicit", "password", "client_credentials")
-                    .scopes("read", "write");
+                // TODO This is just here for development purposes.
+                .withClient(securityResourceProperties.getClientId())
+                .secret(securityResourceProperties.getClientSecret())
+                .authorizedGrantTypes("authorization_code", "refresh_token",
+                                      "implicit", "password", "client_credentials")
+                .scopes("read", "write");
         }
 
         @Override
         public void configure(AuthorizationServerEndpointsConfigurer endpoints)
-                throws Exception {
-            endpoints.authenticationManager(authenticationManager)
-                    .accessTokenConverter(jwtAccessTokenConverter());
+            throws Exception {
+
+            endpoints
+                .authenticationManager(new ProviderManager(Arrays.asList(smartCosmosAuthenticationProvider)))
+                .userDetailsService(smartCosmosAuthenticationProvider)
+                .accessTokenConverter(jwtAccessTokenConverter());
         }
 
         @Override
         public void configure(AuthorizationServerSecurityConfigurer oauthServer)
-                throws Exception {
+            throws Exception {
+
             oauthServer.tokenKeyAccess("permitAll()")
-                    .checkTokenAccess("isAuthenticated()");
+                .checkTokenAccess("isAuthenticated()");
         }
 
     }
