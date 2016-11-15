@@ -188,9 +188,6 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
         @Autowired
         private AuthenticationManager authenticationManager;
 
-        @Autowired
-        private SmartCosmosAuthenticationProvider smartCosmosAuthenticationProvider;
-
         @Bean
         public JwtAccessTokenConverter jwtAccessTokenConverter() {
 
