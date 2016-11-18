@@ -22,11 +22,11 @@
     <parent>
         <groupId>net.smartcosmos</groupId>
         <artifactId>smartcosmos-framework-parent</artifactId>
-        <version>3.0.1-SNAPSHOT</version>
+        <version>3.1.0</version>
         <relativePath></relativePath>
     </parent>
     <artifactId>smartcosmos-auth-server</artifactId>
-    <version>3.0.1-SNAPSHOT</version>
+    <version>3.0.2-SNAPSHOT</version>
     <name>SMART COSMOS Authorization Server</name>
     <description>SMART COSMOS Authorization Server handles authentication throughout the microservice fleet</description>
     <properties>
