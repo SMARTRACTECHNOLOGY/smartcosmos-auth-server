@@ -1,5 +1,6 @@
 package net.smartcosmos.cluster.auth;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,12 +30,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import net.smartcosmos.cluster.auth.domain.UserResponse;
 import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.user.SmartCosmosCachedUser;
 
 import static org.apache.commons.lang.StringUtils.defaultIfBlank;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 @Slf4j
 @Service
@@ -118,7 +121,12 @@ public class SmartCosmosAuthenticationProvider
                 return response;
             } else {
                 // Checking to see if user is still active
-                UserResponse response = restTemplate.exchange(userDetailsServerLocationUri + "/active/" + username,
+                URI activeUri = UriComponentsBuilder.fromUriString(userDetailsServerLocationUri)
+                    .pathSegment("active")
+                    .pathSegment(username)
+                    .build()
+                    .toUri();
+                UserResponse response = restTemplate.exchange(activeUri,
                                                               HttpMethod.GET, HttpEntity.EMPTY,
                                                               UserResponse.class)
                     .getBody();
@@ -255,11 +263,16 @@ public class SmartCosmosAuthenticationProvider
 
         log.debug("Retrieved user {} from user details service.", userResponse.getUsername());
 
+        // Check if we have the user in the cache and it has a password hash, otherwise set empty String to avoid exception in SmartCosmosCachedUser
+        // parent class org.springframework.security.core.userdetails.User
+        SmartCosmosCachedUser cachedUser = checkedCachedUser(username);
+        String passwordHash = cachedUser != null && isNotBlank(cachedUser.getPassword()) ? cachedUser.getPassword() : "";
+
         final SmartCosmosCachedUser user = new SmartCosmosCachedUser(
             userResponse.getTenantUrn(),
             userResponse.getUserUrn(),
             userResponse.getUsername(),
-            userResponse.getPasswordHash(),
+            passwordHash,
             userResponse.getAuthorities()
                 .stream()
                 .map(SimpleGrantedAuthority::new)
