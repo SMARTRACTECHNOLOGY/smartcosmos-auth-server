@@ -23,10 +23,10 @@
         <groupId>net.smartcosmos</groupId>
         <artifactId>smartcosmos-framework-parent</artifactId>
         <version>3.1.1</version>
-        <relativePath></relativePath>
+        <relativePath />
     </parent>
     <artifactId>smartcosmos-auth-server</artifactId>
-    <version>3.0.2</version>
+    <version>3.0.3-SNAPSHOT</version>
     <name>SMART COSMOS Authorization Server</name>
     <description>SMART COSMOS Authorization Server handles authentication throughout the microservice fleet</description>
     <properties>
@@ -108,6 +108,6 @@
         <connection>scm:git:ssh://git@github.com/SMARTRACTECHNOLOGY/smartcosmos-auth-server.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/SMARTRACTECHNOLOGY/smartcosmos-auth-server.git</developerConnection>
         <url>https://github.com/SMARTRACTECHNOLOGY/smartcosmos-auth-server/tree/master/</url>
-        <tag>v3.0.2</tag>
+        <tag>HEAD</tag>
     </scm>
 </project>
