@@ -1,12 +1,14 @@
 = SMART COSMOS Authentication Server Release Notes
 
-== UNRELEASED
+== Release 3.0.2 (November 21, 2016)
 
 === New Features
 
 No new features are added in this release.
 
 === Bugfixes & Improvements
+
+* OBJECTS-1112 Refresh token requests fail with a server error due to an absent password hash
 
 == Release 3.0.1 (November 18, 2016)
 
