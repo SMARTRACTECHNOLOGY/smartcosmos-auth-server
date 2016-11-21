@@ -26,7 +26,7 @@
         <relativePath></relativePath>
     </parent>
     <artifactId>smartcosmos-auth-server</artifactId>
-    <version>3.0.2-SNAPSHOT</version>
+    <version>3.0.3-SNAPSHOT</version>
     <name>SMART COSMOS Authorization Server</name>
     <description>SMART COSMOS Authorization Server handles authentication throughout the microservice fleet</description>
     <properties>
