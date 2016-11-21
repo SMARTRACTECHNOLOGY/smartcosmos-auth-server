@@ -263,16 +263,11 @@ public class SmartCosmosAuthenticationProvider
 
         log.debug("Retrieved user {} from user details service.", userResponse.getUsername());
 
-        // Check if we have the user in the cache and it has a password hash, otherwise set empty String to avoid exception in SmartCosmosCachedUser
-        // parent class org.springframework.security.core.userdetails.User
-        SmartCosmosCachedUser cachedUser = checkedCachedUser(username);
-        String passwordHash = getPasswordHashFromCacheForUserResponse(cachedUser, UserResponse userResponse);
-
         final SmartCosmosCachedUser user = new SmartCosmosCachedUser(
             userResponse.getTenantUrn(),
             userResponse.getUserUrn(),
             userResponse.getUsername(),
-            passwordHash,
+            getPasswordHash(userResponse),
             userResponse.getAuthorities()
                 .stream()
                 .map(SimpleGrantedAuthority::new)
@@ -283,8 +278,18 @@ public class SmartCosmosAuthenticationProvider
         return user;
     }
 
-    private String getPasswordHashFromCacheForUserResponse(SmartCosmosCachedUser cachedUser, UserResponse userResponse) {
+    /**
+     * <p>Gets a password hash for the returned user.</p>
+     * <p>The method checks if the User contained in the {@link UserResponse} is present in the cache, and returns the cached password hash.</p>
+     * <p><b>The response of this method must not be {@code null}</b>, otherwise an exception will be thrown when attempting to instantiate
+     * {@link SmartCosmosCachedUser}.</p>
+     *
+     * @param userResponse the User response from the User Details Service
+     * @return the password hash from the cached user, or an empty String if absent
+     */
+    private String getPasswordHash(UserResponse userResponse) {
 
+        SmartCosmosCachedUser cachedUser = checkedCachedUser(userResponse.getUsername());
         if (cachedUser != null && isNotBlank(cachedUser.getPassword())
             && cachedUser.getAccountUrn()
                 .equals(userResponse.getTenantUrn())
