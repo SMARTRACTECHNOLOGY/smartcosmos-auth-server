@@ -1,5 +1,6 @@
 package net.smartcosmos.cluster.auth;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,12 +30,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import net.smartcosmos.cluster.auth.domain.UserResponse;
 import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.user.SmartCosmosCachedUser;
 
 import static org.apache.commons.lang.StringUtils.defaultIfBlank;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 @Slf4j
 @Service
@@ -118,7 +121,12 @@ public class SmartCosmosAuthenticationProvider
                 return response;
             } else {
                 // Checking to see if user is still active
-                UserResponse response = restTemplate.exchange(userDetailsServerLocationUri + "/active/" + username,
+                URI activeUri = UriComponentsBuilder.fromUriString(userDetailsServerLocationUri)
+                    .pathSegment("active")
+                    .pathSegment(username)
+                    .build()
+                    .toUri();
+                UserResponse response = restTemplate.exchange(activeUri,
                                                               HttpMethod.GET, HttpEntity.EMPTY,
                                                               UserResponse.class)
                     .getBody();
@@ -259,7 +267,7 @@ public class SmartCosmosAuthenticationProvider
             userResponse.getTenantUrn(),
             userResponse.getUserUrn(),
             userResponse.getUsername(),
-            userResponse.getPasswordHash(),
+            getPasswordHash(userResponse),
             userResponse.getAuthorities()
                 .stream()
                 .map(SimpleGrantedAuthority::new)
@@ -268,5 +276,28 @@ public class SmartCosmosAuthenticationProvider
         users.put(userResponse.getUsername(), user);
 
         return user;
+    }
+
+    /**
+     * <p>Gets a password hash for the returned user.</p>
+     * <p>The method checks if the User contained in the {@link UserResponse} is present in the cache, and returns the cached password hash.</p>
+     * <p><b>The response of this method must not be {@code null}</b>, otherwise an exception will be thrown when attempting to instantiate
+     * {@link SmartCosmosCachedUser}.</p>
+     *
+     * @param userResponse the User response from the User Details Service
+     * @return the password hash from the cached user, or an empty String if absent
+     */
+    private String getPasswordHash(UserResponse userResponse) {
+
+        SmartCosmosCachedUser cachedUser = checkedCachedUser(userResponse.getUsername());
+        if (cachedUser != null && isNotBlank(cachedUser.getPassword())
+            && cachedUser.getAccountUrn()
+                .equals(userResponse.getTenantUrn())
+            && cachedUser.getUserUrn()
+                .equals(userResponse.getUserUrn())) {
+
+            return cachedUser.getPassword();
+        }
+        return "";
     }
 }
