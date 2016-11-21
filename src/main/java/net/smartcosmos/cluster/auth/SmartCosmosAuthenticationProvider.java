@@ -266,7 +266,7 @@ public class SmartCosmosAuthenticationProvider
         // Check if we have the user in the cache and it has a password hash, otherwise set empty String to avoid exception in SmartCosmosCachedUser
         // parent class org.springframework.security.core.userdetails.User
         SmartCosmosCachedUser cachedUser = checkedCachedUser(username);
-        String passwordHash = cachedUser != null && isNotBlank(cachedUser.getPassword()) ? cachedUser.getPassword() : "";
+        String passwordHash = getPasswordHashFromCacheForUserResponse(cachedUser, UserResponse userResponse);
 
         final SmartCosmosCachedUser user = new SmartCosmosCachedUser(
             userResponse.getTenantUrn(),
@@ -281,5 +281,18 @@ public class SmartCosmosAuthenticationProvider
         users.put(userResponse.getUsername(), user);
 
         return user;
+    }
+
+    private String getPasswordHashFromCacheForUserResponse(SmartCosmosCachedUser cachedUser, UserResponse userResponse) {
+
+        if (cachedUser != null && isNotBlank(cachedUser.getPassword())
+            && cachedUser.getAccountUrn()
+                .equals(userResponse.getTenantUrn())
+            && cachedUser.getUserUrn()
+                .equals(userResponse.getUserUrn())) {
+
+            return cachedUser.getPassword();
+        }
+        return "";
     }
 }
