@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,9 +29,10 @@ public class TestSmartCosmosAuthenticationProvider
     public TestSmartCosmosAuthenticationProvider(
         SecurityResourceProperties securityResourceProperties,
         PasswordEncoder passwordEncoder,
-        RestTemplate restTemplate) {
+        RestTemplate restTemplate,
+        UserCache userCache) {
 
-        super(securityResourceProperties, passwordEncoder, restTemplate);
+        super(securityResourceProperties, passwordEncoder, restTemplate, userCache);
     }
 
     @Override

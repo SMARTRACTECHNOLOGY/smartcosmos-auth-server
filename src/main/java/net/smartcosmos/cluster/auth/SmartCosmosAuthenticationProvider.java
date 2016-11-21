@@ -1,7 +1,6 @@
 package net.smartcosmos.cluster.auth;
 
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -21,6 +20,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.authentication.dao.AbstractUserDetailsAuthenticationProvider;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -37,7 +37,6 @@ import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.user.SmartCosmosCachedUser;
 
 import static org.apache.commons.lang.StringUtils.defaultIfBlank;
-import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 @Slf4j
 @Service
@@ -46,9 +45,7 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 public class SmartCosmosAuthenticationProvider
     extends AbstractUserDetailsAuthenticationProvider implements UserDetailsService {
 
-    public static final int MILLISECS_PER_SEC = 1000;
     private final PasswordEncoder passwordEncoder;
-    private final Map<String, SmartCosmosCachedUser> users = new HashMap<>();
     private String userDetailsServerLocationUri;
     private RestTemplate restTemplate;
     private Integer cachedUserKeepAliveSecs;
@@ -57,11 +54,15 @@ public class SmartCosmosAuthenticationProvider
     public SmartCosmosAuthenticationProvider(
         SecurityResourceProperties securityResourceProperties,
         PasswordEncoder passwordEncoder,
-        @Qualifier("userDetailsRestTemplate") RestTemplate restTemplate) {
+        @Qualifier("userDetailsRestTemplate") RestTemplate restTemplate,
+        UserCache userCache) {
+
+        super();
 
         this.passwordEncoder = passwordEncoder;
         this.restTemplate = restTemplate;
         this.cachedUserKeepAliveSecs = securityResourceProperties.getCachedUserKeepAliveSecs();
+        setUserCache(userCache);
 
         this.userDetailsServerLocationUri = securityResourceProperties.getUserDetails()
             .getServer()
@@ -176,25 +177,11 @@ public class SmartCosmosAuthenticationProvider
 
         log.debug("Authenticating, {}", username);
 
-        SmartCosmosCachedUser cachedUser = checkedCachedUser(username);
-        if (cachedUser != null) {
-            if (!StringUtils.isEmpty(authentication.getCredentials())
-                && !StringUtils.isEmpty(cachedUser.getPassword())) {
-                if (passwordEncoder.matches(
-                    authentication.getCredentials()
-                        .toString(),
-                    cachedUser.getPassword())) {
-                    log.debug("Retrieved user {} from auth server cache.", cachedUser.getUsername());
-                    return cachedUser;
-                }
-            }
-        }
-
         UserResponse userResponse = fetchUser(username, authentication);
 
         log.trace("Received response of: {}", userResponse);
 
-        final SmartCosmosCachedUser user = new SmartCosmosCachedUser(
+        SmartCosmosCachedUser user = new SmartCosmosCachedUser(
             userResponse.getTenantUrn(),
             userResponse.getUserUrn(),
             userResponse.getUsername(),
@@ -203,8 +190,6 @@ public class SmartCosmosAuthenticationProvider
                 .stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet()));
-
-        users.put(userResponse.getUsername(), user);
 
         log.debug("Retrieved user {} from user details service.", userResponse.getUsername());
         return user;
@@ -224,21 +209,6 @@ public class SmartCosmosAuthenticationProvider
         return "";
     }
 
-    private SmartCosmosCachedUser checkedCachedUser(String username) {
-
-        if (users.containsKey(username)) {
-            final SmartCosmosCachedUser cachedUser = users.get(username);
-
-            if (System.currentTimeMillis() - cachedUser.getCachedDate()
-                .getTime() > cachedUserKeepAliveSecs * MILLISECS_PER_SEC) {
-                users.remove(username);
-            } else {
-                return cachedUser;
-            }
-        }
-        return null;
-    }
-
     /**
      * This method is only utilized during the REFRESH Token phase and is designed only to see if the user account is still active.  No password is
      * provided, because there was no password used by the client -- <b>only</b> the refresh token.
@@ -252,11 +222,6 @@ public class SmartCosmosAuthenticationProvider
 
         log.debug("Checking to see if account {} is still active", username);
 
-        //        SmartCosmosCachedUser user = checkedCachedUser(username);
-        //        if (user != null) {
-        //            return user;
-        //        }
-
         UserResponse userResponse = fetchUser(username, null);
 
         log.trace("Received response of: {}", userResponse);
@@ -267,37 +232,13 @@ public class SmartCosmosAuthenticationProvider
             userResponse.getTenantUrn(),
             userResponse.getUserUrn(),
             userResponse.getUsername(),
-            getPasswordHash(userResponse),
+            userResponse.getPasswordHash(),
             userResponse.getAuthorities()
                 .stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet()));
 
-        users.put(userResponse.getUsername(), user);
-
         return user;
     }
 
-    /**
-     * <p>Gets a password hash for the returned user.</p>
-     * <p>The method checks if the User contained in the {@link UserResponse} is present in the cache, and returns the cached password hash.</p>
-     * <p><b>The response of this method must not be {@code null}</b>, otherwise an exception will be thrown when attempting to instantiate
-     * {@link SmartCosmosCachedUser}.</p>
-     *
-     * @param userResponse the User response from the User Details Service
-     * @return the password hash from the cached user, or an empty String if absent
-     */
-    private String getPasswordHash(UserResponse userResponse) {
-
-        SmartCosmosCachedUser cachedUser = checkedCachedUser(userResponse.getUsername());
-        if (cachedUser != null && isNotBlank(cachedUser.getPassword())
-            && cachedUser.getAccountUrn()
-                .equals(userResponse.getTenantUrn())
-            && cachedUser.getUserUrn()
-                .equals(userResponse.getUserUrn())) {
-
-            return cachedUser.getPassword();
-        }
-        return "";
-    }
 }
