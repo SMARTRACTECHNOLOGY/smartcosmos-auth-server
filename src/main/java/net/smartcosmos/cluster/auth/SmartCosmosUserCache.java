@@ -13,6 +13,16 @@ import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.user.SmartCosmosCachedUser;
 
 /**
+ * A Spring Security based cache for {@link SmartCosmosCachedUser}s.
+ * <p>
+ * This cache will interrogate the cached user's cachedDate and determine if it is older than now() minus the cache expiration
+ * time.  If the expiration time duration has been exceeded then the user is removed from the cache and null is returned. This
+ * will force Spring Security to fetch a new user from the User Details service.
+ * </p>
+ * <p>
+ * The {@code cachedUserExpirationTime} defaults to the {@link SecurityResourceProperties}.DEFAULT_CACHED_USER_KEEP_ALIVE_SECS
+ * and is set from the {@code smartcosmos.security.resource.cachedUserKeepAliveSecs} configuration property.
+ * </p>
  *
  */
 @Slf4j
