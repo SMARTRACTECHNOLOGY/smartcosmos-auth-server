@@ -2,7 +2,6 @@ package net.smartcosmos.cluster.auth;
 
 import java.net.URI;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -12,6 +11,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.boot.json.JsonParser;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -19,7 +19,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.AbstractUserDetailsAuthenticationProvider;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -49,16 +48,19 @@ public class SmartCosmosAuthenticationProvider
     private String userDetailsServerLocationUri;
     private RestTemplate restTemplate;
     private Integer cachedUserKeepAliveSecs;
+    private ConversionService conversionService;
 
     @Autowired
     public SmartCosmosAuthenticationProvider(
         SecurityResourceProperties securityResourceProperties,
         PasswordEncoder passwordEncoder,
         @Qualifier("userDetailsRestTemplate") RestTemplate restTemplate,
-        UserCache userCache) {
+        UserCache userCache,
+        ConversionService conversionService) {
 
         super();
 
+        this.conversionService = conversionService;
         this.passwordEncoder = passwordEncoder;
         this.restTemplate = restTemplate;
         this.cachedUserKeepAliveSecs = securityResourceProperties.getCachedUserKeepAliveSecs();
@@ -175,24 +177,14 @@ public class SmartCosmosAuthenticationProvider
         UsernamePasswordAuthenticationToken authentication)
         throws AuthenticationException {
 
-        log.debug("Authenticating, {}", username);
+        log.trace("Authenticating, {}", username);
 
         UserResponse userResponse = fetchUser(username, authentication);
 
         log.trace("Received response of: {}", userResponse);
-
-        SmartCosmosCachedUser user = new SmartCosmosCachedUser(
-            userResponse.getTenantUrn(),
-            userResponse.getUserUrn(),
-            userResponse.getUsername(),
-            userResponse.getPasswordHash(),
-            userResponse.getAuthorities()
-                .stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toSet()));
-
         log.debug("Retrieved user {} from user details service.", userResponse.getUsername());
-        return user;
+
+        return conversionService.convert(userResponse, SmartCosmosCachedUser.class);
     }
 
     private String getErrorResponseMessage(HttpStatusCodeException exception) {
@@ -228,17 +220,7 @@ public class SmartCosmosAuthenticationProvider
 
         log.debug("Retrieved user {} from user details service.", userResponse.getUsername());
 
-        final SmartCosmosCachedUser user = new SmartCosmosCachedUser(
-            userResponse.getTenantUrn(),
-            userResponse.getUserUrn(),
-            userResponse.getUsername(),
-            userResponse.getPasswordHash(),
-            userResponse.getAuthorities()
-                .stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toSet()));
-
-        return user;
+        return conversionService.convert(userResponse, SmartCosmosCachedUser.class);
     }
 
 }
