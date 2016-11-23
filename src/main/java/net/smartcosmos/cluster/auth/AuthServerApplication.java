@@ -237,6 +237,8 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
                 // TODO This is just here for development purposes.
                 .withClient(securityResourceProperties.getClientId())
                 .secret(securityResourceProperties.getClientSecret())
+                .accessTokenValiditySeconds(securityResourceProperties.getAccessTokenValiditySecs())
+                .refreshTokenValiditySeconds(securityResourceProperties.getRefreshTokenValiditySecs())
                 .authorizedGrantTypes("authorization_code", "refresh_token",
                                       "implicit", "password", "client_credentials")
                 .scopes("read", "write");

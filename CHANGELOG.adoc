@@ -4,7 +4,8 @@
 
 === New Features
 
-OBJECTS-1100: Implement Proper User Cache for Spring
+* OBJECTS-1100: Implement Proper User Cache for Spring
+* allow for refresh and access token expiration configuration
 
 === Bugfixes & Improvements
 
