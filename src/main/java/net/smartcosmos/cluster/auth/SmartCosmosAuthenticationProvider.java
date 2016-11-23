@@ -47,7 +47,6 @@ public class SmartCosmosAuthenticationProvider
     private final PasswordEncoder passwordEncoder;
     private String userDetailsServerLocationUri;
     private RestTemplate restTemplate;
-    private Integer cachedUserKeepAliveSecs;
     private ConversionService conversionService;
 
     @Autowired
