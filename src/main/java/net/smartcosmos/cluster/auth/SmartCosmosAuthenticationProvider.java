@@ -62,7 +62,6 @@ public class SmartCosmosAuthenticationProvider
         this.conversionService = conversionService;
         this.passwordEncoder = passwordEncoder;
         this.restTemplate = restTemplate;
-        this.cachedUserKeepAliveSecs = securityResourceProperties.getCachedUserKeepAliveSecs();
         setUserCache(userCache);
 
         this.userDetailsServerLocationUri = securityResourceProperties.getUserDetails()
