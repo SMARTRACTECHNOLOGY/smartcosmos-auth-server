@@ -86,7 +86,7 @@ public class SmartCosmosAuthenticationProvider
         UsernamePasswordAuthenticationToken authentication)
         throws AuthenticationException {
 
-        String username = userDetails.getUsername() != null ? userDetails.getUsername() : "(NULL)";
+        String username = defaultIfBlank(userDetails.getUsername(), "(NULL)");
 
         if (authentication.getCredentials() == null) {
             log.debug("Authentication failed for user {}: no credentials provided", username);
