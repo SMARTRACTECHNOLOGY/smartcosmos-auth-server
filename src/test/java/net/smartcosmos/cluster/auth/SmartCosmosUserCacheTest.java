@@ -26,7 +26,7 @@ public class SmartCosmosUserCacheTest {
     public void thatGetUserFromCacheFindsNoMatchingUser() throws Exception {
 
         userCache.putUserInCache(new SmartCosmosCachedUser("an-account-urn", "a-user-urn", "testUser", "noPassword", Collections.emptyList()));
-        assertTrue(userCache.getUserFromCache("noone") == null);
+        assertNull(userCache.getUserFromCache("noone"));
     }
 
     @Test
@@ -40,7 +40,7 @@ public class SmartCosmosUserCacheTest {
                                                                        Collections.emptyList());
         userCache.putUserInCache(expectedUser);
         userCache.putUserInCache(new SmartCosmosCachedUser("an-account-urn", "a-user-urn", "testUser", "******", Collections.emptyList()));
-        assertTrue(expectedUser.equals(userCache.getUserFromCache(expectedUsername)));
+        assertEquals(expectedUser, userCache.getUserFromCache(expectedUsername));
     }
 
     @Test
@@ -53,9 +53,9 @@ public class SmartCosmosUserCacheTest {
                                                                        "****",
                                                                        Collections.emptyList());
         userCache.putUserInCache(expectedUser);
-        assertTrue(expectedUser.equals(userCache.getUserFromCache(expiredUsername)));
+        assertEquals(expectedUser, userCache.getUserFromCache(expiredUsername));
         Thread.sleep(2500);
-        assertTrue(userCache.getUserFromCache(expiredUsername) == null);
+        assertNull(userCache.getUserFromCache(expiredUsername));
 
     }
 }
