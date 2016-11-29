@@ -31,8 +31,8 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import net.smartcosmos.cluster.auth.config.SecurityResourceProperties;
 import net.smartcosmos.cluster.auth.domain.UserResponse;
-import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.user.SmartCosmosCachedUser;
 
 import static org.apache.commons.lang.StringUtils.defaultIfBlank;
@@ -47,7 +47,6 @@ public class SmartCosmosAuthenticationProvider
     private final PasswordEncoder passwordEncoder;
     private String userDetailsServerLocationUri;
     private RestTemplate restTemplate;
-    private Integer cachedUserKeepAliveSecs;
     private ConversionService conversionService;
 
     @Autowired
@@ -63,7 +62,6 @@ public class SmartCosmosAuthenticationProvider
         this.conversionService = conversionService;
         this.passwordEncoder = passwordEncoder;
         this.restTemplate = restTemplate;
-        this.cachedUserKeepAliveSecs = securityResourceProperties.getCachedUserKeepAliveSecs();
         setUserCache(userCache);
 
         this.userDetailsServerLocationUri = securityResourceProperties.getUserDetails()

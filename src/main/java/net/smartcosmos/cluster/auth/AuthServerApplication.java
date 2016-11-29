@@ -51,9 +51,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 
 import net.smartcosmos.annotation.EnableSmartCosmosMonitoring;
 import net.smartcosmos.cluster.auth.config.AuthServerConfiguration;
+import net.smartcosmos.cluster.auth.config.SecurityResourceProperties;
 import net.smartcosmos.cluster.auth.filter.CsrfHeaderFilter;
 import net.smartcosmos.cluster.auth.handlers.AuthUnauthorizedEntryPoint;
-import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.authentication.direct.DirectAccessDeniedHandler;
 import net.smartcosmos.security.authentication.direct.EnableDirectHandlers;
 import net.smartcosmos.security.user.SmartCosmosUserAuthenticationConverter;
@@ -237,6 +237,8 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
                 // TODO This is just here for development purposes.
                 .withClient(securityResourceProperties.getClientId())
                 .secret(securityResourceProperties.getClientSecret())
+                .accessTokenValiditySeconds(securityResourceProperties.getAccessTokenValiditySecs())
+                .refreshTokenValiditySeconds(securityResourceProperties.getRefreshTokenValiditySecs())
                 .authorizedGrantTypes("authorization_code", "refresh_token",
                                       "implicit", "password", "client_credentials")
                 .scopes("read", "write");
