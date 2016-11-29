@@ -31,8 +31,8 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import net.smartcosmos.cluster.auth.config.SecurityResourceProperties;
 import net.smartcosmos.cluster.auth.domain.UserResponse;
-import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.user.SmartCosmosCachedUser;
 
 import static org.apache.commons.lang.StringUtils.defaultIfBlank;

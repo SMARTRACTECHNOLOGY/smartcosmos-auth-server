@@ -51,9 +51,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 
 import net.smartcosmos.annotation.EnableSmartCosmosMonitoring;
 import net.smartcosmos.cluster.auth.config.AuthServerConfiguration;
+import net.smartcosmos.cluster.auth.config.SecurityResourceProperties;
 import net.smartcosmos.cluster.auth.filter.CsrfHeaderFilter;
 import net.smartcosmos.cluster.auth.handlers.AuthUnauthorizedEntryPoint;
-import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.authentication.direct.DirectAccessDeniedHandler;
 import net.smartcosmos.security.authentication.direct.EnableDirectHandlers;
 import net.smartcosmos.security.user.SmartCosmosUserAuthenticationConverter;

@@ -9,7 +9,7 @@ import org.springframework.cache.Cache;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.cache.SpringCacheBasedUserCache;
 
-import net.smartcosmos.security.SecurityResourceProperties;
+import net.smartcosmos.cluster.auth.config.SecurityResourceProperties;
 import net.smartcosmos.security.user.SmartCosmosCachedUser;
 
 /**

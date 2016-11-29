@@ -5,7 +5,7 @@ import java.util.Collections;
 import org.junit.*;
 import org.springframework.cache.concurrent.ConcurrentMapCache;
 
-import net.smartcosmos.security.SecurityResourceProperties;
+import net.smartcosmos.cluster.auth.config.SecurityResourceProperties;
 import net.smartcosmos.security.user.SmartCosmosCachedUser;
 
 import static org.junit.Assert.*;
