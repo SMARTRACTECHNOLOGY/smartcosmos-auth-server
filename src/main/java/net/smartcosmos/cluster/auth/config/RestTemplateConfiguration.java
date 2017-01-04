@@ -16,8 +16,6 @@ import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.util.Base64Utils;
 import org.springframework.web.client.RestTemplate;
 
-import net.smartcosmos.security.SecurityResourceProperties;
-
 import static org.apache.commons.lang.CharEncoding.UTF_8;
 import static org.apache.http.client.config.AuthSchemes.BASIC;
 

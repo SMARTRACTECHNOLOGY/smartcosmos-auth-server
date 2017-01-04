@@ -15,7 +15,7 @@ import org.springframework.security.jwt.crypto.sign.Signer;
 import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory;
 import org.springframework.stereotype.Service;
 
-import net.smartcosmos.security.SecurityResourceProperties;
+import net.smartcosmos.cluster.auth.config.SecurityResourceProperties;
 
 /**
  * @author mgarcia

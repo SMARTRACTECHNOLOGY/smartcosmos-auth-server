@@ -5,15 +5,17 @@ import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserCache;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import net.smartcosmos.cluster.auth.config.SecurityResourceProperties;
 import net.smartcosmos.cluster.auth.domain.UserResponse;
-import net.smartcosmos.security.SecurityResourceProperties;
 
 /**
  * @author voor
@@ -28,9 +30,11 @@ public class TestSmartCosmosAuthenticationProvider
     public TestSmartCosmosAuthenticationProvider(
         SecurityResourceProperties securityResourceProperties,
         PasswordEncoder passwordEncoder,
-        RestTemplate restTemplate) {
+        RestTemplate restTemplate,
+        UserCache userCache,
+        ConversionService conversionService) {
 
-        super(securityResourceProperties, passwordEncoder, restTemplate);
+        super(securityResourceProperties, passwordEncoder, restTemplate, userCache, conversionService);
     }
 
     @Override
