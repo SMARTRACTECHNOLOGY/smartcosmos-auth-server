@@ -14,6 +14,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -49,9 +50,10 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import net.smartcosmos.annotation.EnableSmartCosmosMonitoring;
+import net.smartcosmos.cluster.auth.config.AuthServerConfiguration;
+import net.smartcosmos.cluster.auth.config.SecurityResourceProperties;
 import net.smartcosmos.cluster.auth.filter.CsrfHeaderFilter;
 import net.smartcosmos.cluster.auth.handlers.AuthUnauthorizedEntryPoint;
-import net.smartcosmos.security.SecurityResourceProperties;
 import net.smartcosmos.security.authentication.direct.DirectAccessDeniedHandler;
 import net.smartcosmos.security.authentication.direct.EnableDirectHandlers;
 import net.smartcosmos.security.user.SmartCosmosUserAuthenticationConverter;
@@ -65,6 +67,7 @@ import net.smartcosmos.security.user.SmartCosmosUserAuthenticationConverter;
 @Slf4j
 @EnableDiscoveryClient
 @EnableSmartCosmosMonitoring
+@Import(AuthServerConfiguration.class)
 public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
     public static void main(String[] args) {
@@ -234,6 +237,8 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
                 // TODO This is just here for development purposes.
                 .withClient(securityResourceProperties.getClientId())
                 .secret(securityResourceProperties.getClientSecret())
+                .accessTokenValiditySeconds(securityResourceProperties.getAccessTokenValiditySecs())
+                .refreshTokenValiditySeconds(securityResourceProperties.getRefreshTokenValiditySecs())
                 .authorizedGrantTypes("authorization_code", "refresh_token",
                                       "implicit", "password", "client_credentials")
                 .scopes("read", "write");

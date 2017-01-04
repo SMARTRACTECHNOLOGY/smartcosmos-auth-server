@@ -3,7 +3,7 @@ language: java
 install:
 - mvn -s .settings.xml install -q -U -DskipTests=true -Dmaven.test.redirectTestOutputToFile=true
 script:
-- mvn -s .settings.xml $MVN_GOAL -nsu -Dmaven.test.redirectTestOutputToFile=true
+- mvn -s .settings.xml $MVN_GOAL -Ppublic -nsu -Dmaven.test.redirectTestOutputToFile=true
 after_success:
 - mvn -s .settings.xml -P coverage clean test jacoco:report coveralls:report -DrepoToken=$COVERALLS_REPO_TOKEN
 jdk:
