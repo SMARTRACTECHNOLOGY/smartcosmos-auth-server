@@ -58,30 +58,16 @@ import net.smartcosmos.security.authentication.direct.DirectAccessDeniedHandler;
 import net.smartcosmos.security.authentication.direct.EnableDirectHandlers;
 import net.smartcosmos.security.user.SmartCosmosUserAuthenticationConverter;
 
-/**
- * @author voor
- */
 @SpringBootApplication
-@Controller
 @SessionAttributes("authorizationRequest")
 @Slf4j
-@EnableDiscoveryClient
 @EnableSmartCosmosMonitoring
-@Import(AuthServerConfiguration.class)
 public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
     public static void main(String[] args) {
 
         new SpringApplicationBuilder(AuthServerApplication.class).web(true)
             .run(args);
-    }
-
-    @Bean
-    @Primary
-    public AuthenticationManager authenticationManager(
-        AuthenticationConfiguration configuration) throws Exception {
-
-        return configuration.getAuthenticationManager();
     }
 
     @Override
@@ -103,12 +89,6 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
         PasswordEncoder passwordEncoder() {
 
             return new BCryptPasswordEncoder();
-        }
-
-        @Override
-        public void configure(AuthenticationManagerBuilder auth) throws Exception {
-
-            log.info("Adding in customer user details authentication provider");
         }
     }
 
