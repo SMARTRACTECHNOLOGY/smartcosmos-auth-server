@@ -11,17 +11,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.authentication.configuration.EnableGlobalAuthentication;
 import org.springframework.security.config.annotation.authentication.configurers.GlobalAuthenticationConfigurerAdapter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -43,14 +39,12 @@ import org.springframework.security.web.authentication.logout.LogoutSuccessHandl
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
-import org.springframework.stereotype.Controller;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import net.smartcosmos.annotation.EnableSmartCosmosMonitoring;
-import net.smartcosmos.cluster.auth.config.AuthServerConfiguration;
 import net.smartcosmos.cluster.auth.config.SecurityResourceProperties;
 import net.smartcosmos.cluster.auth.filter.CsrfHeaderFilter;
 import net.smartcosmos.cluster.auth.handlers.AuthUnauthorizedEntryPoint;
@@ -58,30 +52,16 @@ import net.smartcosmos.security.authentication.direct.DirectAccessDeniedHandler;
 import net.smartcosmos.security.authentication.direct.EnableDirectHandlers;
 import net.smartcosmos.security.user.SmartCosmosUserAuthenticationConverter;
 
-/**
- * @author voor
- */
 @SpringBootApplication
-@Controller
 @SessionAttributes("authorizationRequest")
 @Slf4j
-@EnableDiscoveryClient
 @EnableSmartCosmosMonitoring
-@Import(AuthServerConfiguration.class)
 public class AuthServerApplication extends WebMvcConfigurerAdapter {
 
     public static void main(String[] args) {
 
         new SpringApplicationBuilder(AuthServerApplication.class).web(true)
             .run(args);
-    }
-
-    @Bean
-    @Primary
-    public AuthenticationManager authenticationManager(
-        AuthenticationConfiguration configuration) throws Exception {
-
-        return configuration.getAuthenticationManager();
     }
 
     @Override
@@ -103,12 +83,6 @@ public class AuthServerApplication extends WebMvcConfigurerAdapter {
         PasswordEncoder passwordEncoder() {
 
             return new BCryptPasswordEncoder();
-        }
-
-        @Override
-        public void configure(AuthenticationManagerBuilder auth) throws Exception {
-
-            log.info("Adding in customer user details authentication provider");
         }
     }
 
