@@ -1,9 +1,12 @@
 package net.smartcosmos.cluster.auth;
 
 import java.net.URI;
+import java.util.Base64;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.http.client.config.AuthSchemes;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +24,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import static org.junit.Assert.*;
 
@@ -81,6 +85,67 @@ public class AuthServerApplicationTest {
                          .getFirst("Location"));
     }
 
+    @Test
+    public void thatMissingServiceCredentialsReturnUnauthorized() {
+
+        URI requestUri = UriComponentsBuilder.fromHttpUrl("http://localhost:" + port)
+            .path("oauth/token")
+            .queryParam("grant_type", "password")
+            .queryParam("scope", "read")
+            .queryParam("username", "someUsername")
+            .queryParam("password", "somePassword")
+            .build()
+            .toUri();
+
+        RequestEntity requestEntity = RequestEntity.post(requestUri)
+            .build();
+        ResponseEntity<Map> response = template.exchange(requestEntity, Map.class);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
+    public void thatWrongServiceCredentialsReturnUnauthorized() {
+
+        URI requestUri = UriComponentsBuilder.fromHttpUrl("http://localhost:" + port)
+            .path("oauth/token")
+            .queryParam("grant_type", "password")
+            .queryParam("scope", "read")
+            .queryParam("username", "someUsername")
+            .queryParam("password", "somePassword")
+            .build()
+            .toUri();
+
+        RequestEntity requestEntity = RequestEntity.post(requestUri)
+            .header(HttpHeaders.AUTHORIZATION, getBasicAuth("user", "invalid"))
+            .build();
+        ResponseEntity<Map> response = template.exchange(requestEntity, Map.class);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
+    public void thatProperServiceCredentialsReturnOk() {
+
+        URI requestUri = UriComponentsBuilder.fromHttpUrl("http://localhost:" + port)
+            .path("oauth/token")
+            .queryParam("grant_type", "password")
+            .queryParam("scope", "read")
+            .queryParam("username", "someUsername")
+            .queryParam("password", "somePassword")
+            .build()
+            .toUri();
+
+        RequestEntity requestEntity = RequestEntity.post(requestUri)
+            .header(HttpHeaders.AUTHORIZATION, getBasicAuth("user", "password"))
+            .build();
+        ResponseEntity<Map> response = template.exchange(requestEntity, Map.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    // region Helpers
+
     private String getCsrf(String soup) {
 
         Matcher matcher = Pattern.compile("(?s).*name=\"_csrf\".*?value=\"([^\"]+).*")
@@ -90,4 +155,13 @@ public class AuthServerApplicationTest {
         }
         return null;
     }
+
+    private String getBasicAuth(String username, String password) {
+
+        String credentialString = username + ":" + password;
+        return AuthSchemes.BASIC + " " + Base64.getEncoder()
+            .encodeToString(credentialString.getBytes());
+    }
+
+    // endregion
 }
