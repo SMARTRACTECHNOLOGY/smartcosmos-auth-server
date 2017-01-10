@@ -4,9 +4,12 @@
 
 === New Features
 
-OBJECTS-1100: Implement Proper User Cache for Spring
+* OBJECTS-1100: Implement Proper User Cache for Spring
+* allow for refresh and access token expiration configuration
 
 === Bugfixes & Improvements
+
+* OBJECTS-1116 Auth Server returns StackOverflowError in case of wrong Basic Auth
 
 == Release 3.0.2 (November 21, 2016)
 

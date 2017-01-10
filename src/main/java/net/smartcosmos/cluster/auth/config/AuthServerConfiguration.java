@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.userdetails.UserCache;
 
 import net.smartcosmos.cluster.auth.SmartCosmosUserCache;
-import net.smartcosmos.security.SecurityResourceProperties;
 
 /**
  * Configuration for Auth Server.
