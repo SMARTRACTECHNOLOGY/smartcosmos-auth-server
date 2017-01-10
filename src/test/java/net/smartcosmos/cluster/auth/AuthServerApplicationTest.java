@@ -144,6 +144,110 @@ public class AuthServerApplicationTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
+    @Test
+    public void thatTokenAcquisitionReturnsResponseBody() {
+
+        URI requestUri = UriComponentsBuilder.fromHttpUrl("http://localhost:" + port)
+            .path("oauth/token")
+            .queryParam("grant_type", "password")
+            .queryParam("scope", "read")
+            .queryParam("username", "someUsername")
+            .queryParam("password", "somePassword")
+            .build()
+            .toUri();
+
+        RequestEntity requestEntity = RequestEntity.post(requestUri)
+            .header(HttpHeaders.AUTHORIZATION, getBasicAuth("user", "password"))
+            .build();
+        ResponseEntity<Map> response = template.exchange(requestEntity, Map.class);
+
+        assertTrue(response.hasBody());
+    }
+
+    @Test
+    public void thatTokenAcquisitionReturnsAccessToken() {
+
+        URI requestUri = UriComponentsBuilder.fromHttpUrl("http://localhost:" + port)
+            .path("oauth/token")
+            .queryParam("grant_type", "password")
+            .queryParam("scope", "read")
+            .queryParam("username", "someUsername")
+            .queryParam("password", "somePassword")
+            .build()
+            .toUri();
+
+        RequestEntity requestEntity = RequestEntity.post(requestUri)
+            .header(HttpHeaders.AUTHORIZATION, getBasicAuth("user", "password"))
+            .build();
+        ResponseEntity<Map> response = template.exchange(requestEntity, Map.class);
+        Map<String, Object> responseBody = response.getBody();
+
+        assertTrue(responseBody.containsKey("access_token"));
+    }
+
+    @Test
+    public void thatTokenAcquisitionReturnsRefreshToken() {
+
+        URI requestUri = UriComponentsBuilder.fromHttpUrl("http://localhost:" + port)
+            .path("oauth/token")
+            .queryParam("grant_type", "password")
+            .queryParam("scope", "read")
+            .queryParam("username", "someUsername")
+            .queryParam("password", "somePassword")
+            .build()
+            .toUri();
+
+        RequestEntity requestEntity = RequestEntity.post(requestUri)
+            .header(HttpHeaders.AUTHORIZATION, getBasicAuth("user", "password"))
+            .build();
+        ResponseEntity<Map> response = template.exchange(requestEntity, Map.class);
+        Map<String, Object> responseBody = response.getBody();
+
+        assertTrue(responseBody.containsKey("refresh_token"));
+    }
+
+    @Test
+    public void thatTokenAcquisitionReturnsTokenType() {
+
+        URI requestUri = UriComponentsBuilder.fromHttpUrl("http://localhost:" + port)
+            .path("oauth/token")
+            .queryParam("grant_type", "password")
+            .queryParam("scope", "read")
+            .queryParam("username", "someUsername")
+            .queryParam("password", "somePassword")
+            .build()
+            .toUri();
+
+        RequestEntity requestEntity = RequestEntity.post(requestUri)
+            .header(HttpHeaders.AUTHORIZATION, getBasicAuth("user", "password"))
+            .build();
+        ResponseEntity<Map> response = template.exchange(requestEntity, Map.class);
+        Map<String, Object> responseBody = response.getBody();
+
+        assertTrue(responseBody.containsKey("token_type"));
+    }
+
+    @Test
+    public void thatTokenAcquisitionReturnsBearerToken() {
+
+        URI requestUri = UriComponentsBuilder.fromHttpUrl("http://localhost:" + port)
+            .path("oauth/token")
+            .queryParam("grant_type", "password")
+            .queryParam("scope", "read")
+            .queryParam("username", "someUsername")
+            .queryParam("password", "somePassword")
+            .build()
+            .toUri();
+
+        RequestEntity requestEntity = RequestEntity.post(requestUri)
+            .header(HttpHeaders.AUTHORIZATION, getBasicAuth("user", "password"))
+            .build();
+        ResponseEntity<Map> response = template.exchange(requestEntity, Map.class);
+        Map<String, Object> responseBody = response.getBody();
+
+        assertEquals("bearer", responseBody.get("token_type"));
+    }
+
     // region Helpers
 
     private String getCsrf(String soup) {
