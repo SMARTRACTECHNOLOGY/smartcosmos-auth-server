@@ -15,7 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.client.RestTemplate;
 
-import net.smartcosmos.security.SecurityResourceProperties;
+import net.smartcosmos.cluster.auth.config.SecurityResourceProperties;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.reset;
