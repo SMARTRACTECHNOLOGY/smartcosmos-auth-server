@@ -9,16 +9,12 @@ spring:
     config:
       enabled:  false
 
-eureka:
-  client:
-    enabled:  false
-
-ribbon.http.client.enabled: true
-
 smartcosmos:
   debug: false
   security:
     resource:
+      clientId: user
+      clientSecret: password
       keystore:
         location: "classpath:test-smartcosmos.jks"
         password: password
