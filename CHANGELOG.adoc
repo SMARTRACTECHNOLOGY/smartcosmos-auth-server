@@ -9,6 +9,7 @@
 
 === Bugfixes & Improvements
 
+* OBJECTS-1049 Clean up Auth Server main class and @Configuration classes
 * OBJECTS-1116 Auth Server returns StackOverflowError in case of wrong Basic Auth
 
 == Release 3.0.2 (November 21, 2016)
